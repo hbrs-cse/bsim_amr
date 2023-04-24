@@ -19,6 +19,6 @@ At the moment, the elements seem to be marked correctly, and the refinement take
 problems with the node assignment and rotation. 
 
 Some elements work fine with the current state of the algorithm:
-![Alt text](img/correct_marked.jpg?raw=true "Correct refined")
+![Alt text](img/correct_marked.jpg?raw=true width="300" height="300" "Correct refined")
 And some elements are broken because the wrong nodes are assigned:
-![Alt text] (img/wrong_marked.jpg?raw=true "Wrong refined"
+![Alt text] (img/wrong_marked.jpg?raw=true width="300" height="300" "Wrong refined")
