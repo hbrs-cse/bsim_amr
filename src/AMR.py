@@ -453,7 +453,6 @@ class AMR:
 
         return hanging_nodes_red, hanging_nodes_blue
 
-
     def second_iter_ele(self, second_neighbor, direct_neighbor, marked_ele, along_edge):
         """
         Similiar algorithm to function 'get_green_blue_elements' but this algorithm finds only
@@ -551,8 +550,6 @@ class AMR:
         # elements not along the longest edge has a green neighbor. This is not allowed because otherwise the green
         # element has 2 neighbors.
 
-
-
         self.for_green_ref = [self.for_green_ref]
         self.for_blue_ref_two_neighbor = [self.for_blue_ref_two_neighbor]
         self.green_marked_neighbor = [self.green_marked_neighbor]
@@ -562,8 +559,6 @@ class AMR:
         self.second_iter_ele(second_neighbor, direct_neighbor, marked_ele, red_longest_edge)
 
         self.second_blue_marked_neighbor = np.asarray(self.second_blue_marked_neighbor)
-
-
 
     def check_elements(self, direct_neighbor,
                        marked_ele,
@@ -832,7 +827,7 @@ class AMR:
         neighbors = np.asarray(neighbors)
         nodes = self.nodes_array(neighbors[:, 0])
         nodes_neighbor = self.nodes_array(np.asarray(neighbors)[:, 1])
-        #neighbor_nodes_rotation, rotation_index, keep_nodes = self.rotation_direction(nodes_neighbor, nodes)
+        # neighbor_nodes_rotation, rotation_index, keep_nodes = self.rotation_direction(nodes_neighbor, nodes)
 
         for count, row_nodes in enumerate(zip(nodes_neighbor,
                                               mid_nodes,
@@ -1027,7 +1022,6 @@ class AMR:
         else:
             self.blue_pattern(two_neighbor, ele_two_neighbor, self.second_blue_marked_neighbor[iteration][:, 1])
 
-
     def blue_pattern(self, neighbor_stack, ele, neighbor):
         """
         This function creates the blue pattern for elements which have one or two neighbors.
@@ -1060,7 +1054,6 @@ class AMR:
             ))
 
 
-
                               for i in range(len(one_neighbor)):
             self.blue_ele.append(np.array(
                 (nodes[i, 2], one_neighbor[i, 1], one_neighbor[i, 0] ), dtype=np.int
@@ -1073,37 +1066,48 @@ class AMR:
             ))
             """
 
-    def create_all_pattern(self, nodes_where_longest, iter_num, *argv):
+    def create_first_pattern(self, nodes_where_longest,
+                             red_ele,
+                             green_ele,
+                             blue_ele_one_neighbor,
+                             blue_ele_two_neighbor):
 
         """
         This function creates the new mid nodes and a template which is used to determine the corresponding
         mid nodes to the edges. Afterwards the functions to create the red, green and blue pattern are called.
 
         @param nodes_where_longest:
-        @param not_longest_edge:
-        @param iter_num:
-        @param argv:
+        @param red_ele:
+        @param green_ele:
+        @param blue_ele_one_neighbor:
+        @param blue_ele_two_neighbor:
         @return:
         """
+        first_iter = red_ele + blue_ele_one_neighbor
+        mid_node_coors = self.mid_nodes(first_iter)
+        self.red_pattern(mid_node_coors, red_ele)
+        self.green_pattern(nodes_where_longest, green_ele, 0)
+        self.blue_pattern_one_neighbor(nodes_where_longest, blue_ele_one_neighbor)
+        self.blue_pattern_two_neighbor(nodes_where_longest, blue_ele_two_neighbor, 0)
 
-        if iter_num == 1:
-            first_iter = argv[0] + argv[2]
-            mid_node_coors = self.mid_nodes(first_iter)
-            self.red_pattern(mid_node_coors, argv[0])
-            self.green_pattern(nodes_where_longest, argv[1], 0)
-            self.blue_pattern_one_neighbor(nodes_where_longest, argv[2])
-            self.blue_pattern_two_neighbor(nodes_where_longest, argv[3], 0)
+    def create_second_pattern(self, nodes_where_longest,
+                              green_ele,
+                              blue_ele_two_neighbor):
+        """
+        This function creates the pattern of the second iteration
 
-        else:
+        @param nodes_where_longest:
+        @param blue_ele_two_neighbor:
+        @param green_ele:
+        """
+        for iteration, ele in enumerate(green_ele[1::]):
+            iteration += 1
+            self.green_pattern(nodes_where_longest, ele, iteration)
 
-            for iteration, green_ele in enumerate(argv[0][1::]):
-                iteration += 1
-                self.green_pattern(nodes_where_longest, green_ele, iteration)
-
-            for iteration, blue_ele in enumerate(argv[1][1::]):
-                iteration += 1
-                if isinstance(argv[1], list):
-                    self.blue_pattern_two_neighbor(nodes_where_longest, blue_ele, iteration)
+        for iteration, blue_ele in enumerate(blue_ele_two_neighbor[1::]):
+            iteration += 1
+            if isinstance(blue_ele_two_neighbor, list):
+                self.blue_pattern_two_neighbor(nodes_where_longest, blue_ele, iteration)
 
     def main_amr(self):
         """
@@ -1133,41 +1137,36 @@ class AMR:
         hanging_nodes_red = []
         hanging_nodes_blue = []
         iter_num = 0
-        while iter_num < 2:
-            hnr, hnb = self.check_elements(direct_neighbor,
-                                           marked_neighbor,
-                                           nodes_where_longest)
-            for nodes_r in hnr:
-                hanging_nodes_red.append(nodes_r)
-            for nodes_b in hnb:
-                hanging_nodes_blue.append(nodes_b)
-            self.rgb_iter(hanging_nodes_red + hanging_nodes_blue)
 
-            if len(hanging_nodes_red + hanging_nodes_blue) != 0:
-                print("______________________________")
-                print("Found {} red element".format(len(self.for_red_ref)))
-            else:
-                print("-----------------------------------")
-                print("Eliminated all hanging nodes!")
-                break
-            iter_num += 1
-            self.create_all_pattern(nodes_where_longest,
-                                    iter_num,
-                                    self.for_red_ref,
-                                    self.for_green_ref,
-                                    self.for_blue_ref_one_neighbor,
-                                    self.for_blue_ref_two_neighbor)
-            self.all_marked_elements()
-            self.remove_hanging_nodes(hanging_nodes_red,
-                                      hanging_nodes_blue,
-                                      nodes_where_longest)
-            iter_num = 2
-            self.create_all_pattern(nodes_where_longest,
-                                    iter_num,
-                                    self.for_green_ref,
-                                    self.for_blue_ref_two_neighbor,
-                                    self.for_blue_ref_one_neighbor)
-            break
+        hnr, hnb = self.check_elements(direct_neighbor,
+                                       marked_neighbor,
+                                       nodes_where_longest)
+        for nodes_r in hnr:
+            hanging_nodes_red.append(nodes_r)
+        for nodes_b in hnb:
+            hanging_nodes_blue.append(nodes_b)
+        self.rgb_iter(hanging_nodes_red + hanging_nodes_blue)
+
+        if len(hanging_nodes_red + hanging_nodes_blue) != 0:
+            print("______________________________")
+            print("Found {} red element".format(len(self.for_red_ref)))
+        else:
+            print("-----------------------------------")
+            print("Eliminated all hanging nodes!")
+
+        self.create_first_pattern(nodes_where_longest,
+                                  self.for_red_ref,
+                                  self.for_green_ref,
+                                  self.for_blue_ref_one_neighbor,
+                                  self.for_blue_ref_two_neighbor)
+        self.all_marked_elements()
+        self.remove_hanging_nodes(hanging_nodes_red,
+                                  hanging_nodes_blue,
+                                  nodes_where_longest)
+
+        self.create_second_pattern(nodes_where_longest,
+                                   self.for_green_ref,
+                                   self.for_blue_ref_two_neighbor)
 
 
 class write_file():
