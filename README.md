@@ -15,6 +15,8 @@ is based on the thickness difference between undeformed and deformed shell eleme
 
 
 **Current status**
+
+
 At the moment, the elements seem to be marked correctly, and the refinement takes place. But there are
 problems with the node assignment and rotation. 
 
