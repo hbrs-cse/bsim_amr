@@ -19,6 +19,14 @@ At the moment, the elements seem to be marked correctly, and the refinement take
 problems with the node assignment and rotation. 
 
 Some elements work fine with the current state of the algorithm:
+
+
 <img src="img/correct_marked.jpg" width="300" height="300" alt="Correct refined">
+
+
 And some elements are broken because the wrong nodes are assigned:
+
+
 <img src="img/wrong_marked.jpg" width="300" height="300" alt="Wrong refined">
+
+
