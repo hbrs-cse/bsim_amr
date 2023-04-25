@@ -2,6 +2,9 @@ import os
 from bcs_read import bcs_data
 from AMR import AMR
 from bcs_write import write_file
+import cProfile
+import io
+import pstats
 
 path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/*"
 out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out"
@@ -69,6 +72,7 @@ class BSimAmr:
         self.bc = self.Bcs.bc
         self.Bcs.filepath
 
+
     def run_amr(self):
         self.amr.ele_undeformed = self.ele_data_undef
         self.amr.ele_deformed = self.ele_data_def
@@ -93,5 +97,16 @@ class BSimAmr:
 
 
 if __name__ == '__main__':
+    pr = cProfile.Profile()
+    pr.enable()
     bSimAmr = BSimAmr(path, out_path, thickness)
     bSimAmr.main()
+    pr.disable()
+    s = io.StringIO()
+    ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
+    ps.print_stats()
+
+    with open('C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/perf_output.txt', 'w+') as f:
+        f.write(s.getvalue())
+
+
