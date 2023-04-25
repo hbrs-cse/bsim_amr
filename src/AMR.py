@@ -829,7 +829,8 @@ class AMR:
         idx1 = []
         idx2 = []
         keep_node = []
-        for row in zip(nodes_neighbor, nodes):
+        keep_node_index = []
+        for index, row in enumerate(zip(nodes_neighbor, nodes)):
             intersection, _, indices = np.intersect1d(
                 row[0], row[1], return_indices=True)
             idx1.append(np.where(row[0] == intersection[0])[0][0])
@@ -839,9 +840,13 @@ class AMR:
                 np.setxor1d(intersection, row[1])[0]
             )
 
+            keep_node_index.append(
+                np.where(keep_node[index] == row[1])[0][0]
+            )
+
         index = np.c_[idx1, idx2]
 
-        return keep_node, index
+        return keep_node, index, keep_node_index
 
     def rotation_direction(self, nodes_neighbor, nodes):
 
@@ -921,10 +926,10 @@ class AMR:
                 (row_nodes[1][0], row_nodes[1][1], row_nodes[1][2])
             ))
             self.red_ele.append(np.array(
-                (row_nodes[2][2], row_nodes[1][1], row_nodes[1][2])
+                (row_nodes[2][2], row_nodes[1][2], row_nodes[1][1])
             ))
             self.red_ele.append(np.array(
-                (row_nodes[1][0], row_nodes[2][0], row_nodes[1][2])
+                (row_nodes[1][2], row_nodes[2][0], row_nodes[1][0])
             ))
             self.red_ele.append(np.array(
                 (row_nodes[1][0], row_nodes[2][1], row_nodes[1][1])
@@ -995,12 +1000,12 @@ class AMR:
 
         if iteration == 0:
             nodes_neighbor = self.nodes_array(self.green_marked_neighbor)
-            keep_node, index = self.keep_rotation_direction(
+            keep_node, index, _ = self.keep_rotation_direction(
                 nodes_neighbor, nodes)
         else:
             nodes_neighbor = self.nodes_array(
                 self.green_marked_neighbor[iteration])
-            keep_node, index = self.keep_rotation_direction(
+            keep_node, index, _ = self.keep_rotation_direction(
                 nodes_neighbor, nodes)
 
         for count, row_nodes in enumerate(zip(nodes_neighbor,
@@ -1122,7 +1127,7 @@ class AMR:
             self.blue_pattern(two_neighbor, ele_two_neighbor,
                               self.second_blue_marked_neighbor[iteration][:, 1])
 
-    def blue_pattern(self, neighbor_stack, ele, neighbor):
+    def blue_pattern(self, one_neighbor, ele, neighbor):
         """
         This function creates the blue pattern for elements which have one or two neighbors.
         @param neighbor_stack:
@@ -1131,23 +1136,48 @@ class AMR:
         """
         nodes = self.nodes_array(ele)
         nodes_neighbor = self.nodes_array(neighbor)
-        keep_node_two, index_two = self.keep_rotation_direction(
+        keep_node, index, keep_node_index = self.keep_rotation_direction(
             nodes_neighbor, nodes)
+        new_nodes = []
+        for idx, row in enumerate(keep_node_index):
+            if row == 1:
+                new_nodes.append(
+                    np.array((nodes[idx, 2], nodes[idx, 0]))
+                )
+            elif row == 2:
+                new_nodes.append(
+                    np.array((nodes[idx, 0], nodes[idx, 1]))
+                )
+            else:
+                new_nodes.append(
+                    np.array((nodes[idx, 1], nodes[idx, 2]))
+                )
 
-        for count, row_nodes in enumerate(zip(nodes_neighbor,
-                                              neighbor_stack)):
+        for count, row_nodes in enumerate(zip(new_nodes,
+                                              one_neighbor)):
             self.blue_ele.append(np.array(
-                (row_nodes[0][index_two[count, 1]],
+                (keep_node[count],  row_nodes[0][1], row_nodes[1][1])
+            ))
+            self.blue_ele.append(np.array(
+                (row_nodes[1][0], row_nodes[0][1], row_nodes[1][1])
+            ))
+            self.blue_ele.append(np.array(
+                (row_nodes[0][0], row_nodes[1][1], row_nodes[1][0])
+            ))
+            """
+            self.blue_ele.append(np.array(
+                (row_nodes[0][index[count, 1]],
                  row_nodes[1][0], row_nodes[1][1])
             ))
             self.blue_ele.append(np.array(
-                (row_nodes[0][index_two[count, 0]],
+                (row_nodes[0][index[count, 0]],
                  row_nodes[1][1], row_nodes[1][0])
             ))
             self.blue_ele.append(np.array(
-                (row_nodes[0][index_two[count, 0]],
-                 keep_node_two[count], row_nodes[1][1])
+                (row_nodes[0][index[count, 0]],
+                 keep_node[count], row_nodes[1][1])
             ))
+            """
             """
                                            index)):
             self.green_ele.append(np.array(
@@ -1170,7 +1200,8 @@ class AMR:
             ))
             """
 
-    def create_first_pattern(self, nodes_where_longest,
+    def create_first_pattern(self,
+                             nodes_where_longest,
                              red_ele,
                              green_ele,
                              blue_ele_one_neighbor,
@@ -1189,11 +1220,14 @@ class AMR:
         first_iter = red_ele + blue_ele_one_neighbor
         mid_node_coors = self.mid_nodes(first_iter)
         self.red_pattern(mid_node_coors, red_ele)
+
         self.green_pattern(nodes_where_longest, green_ele, 0)
+
         self.blue_pattern_one_neighbor(
             nodes_where_longest, blue_ele_one_neighbor)
-        self.blue_pattern_two_neighbor(
-            nodes_where_longest, blue_ele_two_neighbor, 0)
+
+        #self.blue_pattern_two_neighbor(
+        #    nodes_where_longest, blue_ele_two_neighbor, 0)
 
     def create_second_pattern(self, nodes_where_longest,
                               green_ele,
@@ -1209,11 +1243,11 @@ class AMR:
             iteration += 1
             self.green_pattern(nodes_where_longest, ele, iteration)
 
-        for iteration, blue_ele in enumerate(blue_ele_two_neighbor[1::]):
-            iteration += 1
-            if isinstance(blue_ele_two_neighbor, list):
-                self.blue_pattern_two_neighbor(
-                    nodes_where_longest, blue_ele, iteration)
+        #for iteration, blue_ele in enumerate(blue_ele_two_neighbor[1::]):
+        #    iteration += 1
+        #    if isinstance(blue_ele_two_neighbor, list):
+        #        self.blue_pattern_two_neighbor(
+        #            nodes_where_longest, blue_ele, iteration)
 
     def main_amr(self):
         """
@@ -1276,169 +1310,3 @@ class AMR:
                                    self.for_blue_ref_two_neighbor)
 
 
-class write_file():
-    def __init__(self, obj, out_path):
-        self._out_path = out_path
-
-        self.ele_undeformed = obj.ele_undeformed
-        self.ele_deformed = obj.ele_deformed
-        self.mesh_undeformed = obj.mesh_undeformed
-        self.mesh_deformed = obj.ele_deformed
-        self.bc = obj.bc
-
-        self.for_red_ref = obj.for_red_ref
-        self.for_green_ref = obj.for_green_ref
-        self.for_blue_ref_one_neighbor = obj.for_blue_ref_one_neighbor
-        self.for_blue_ref_two_neighbor = obj.for_blue_ref_two_neighbor
-
-        self.blue_ele = obj.blue_ele
-        self.green_ele = obj.green_ele
-        self.red_ele = obj.red_ele
-
-        self.bcs_mesh = obj.bcs_mesh
-
-        self.check_out_path = out_path
-
-    @property
-    def check_out_path(self):
-        """
-        Assigning the output path
-        @return: self.__check_out_path
-        """
-        return self.__check_out_path
-
-    @check_out_path.setter
-    def check_out_path(self, path):
-        if isinstance(path, str):
-            self.__check_out_path = path
-        else:
-            raise TypeError("Error while assigning the output folder")
-
-    def check_path(self):
-        """
-        Check if the output path folder ends with /out
-        @return:
-        """
-        if self.check_out_path.endswith("/out"):
-            pass
-        else:
-            raise TypeError("Wrong output folder")
-
-    def manipulate_ele(self):
-        """
-        Update the old ndarray with the unrefined elements. Also keep thickness and temperature of the marked and
-        refined elements the same. Delete the elements from the mesh which are marked
-        """
-        for_green_ref = []
-        for_blue_ref_two_neighbor = []
-
-        for all_ele in self.for_green_ref:
-            for_green_ref += all_ele
-        for all_ele in self.for_blue_ref_two_neighbor:
-            for_blue_ref_two_neighbor += all_ele
-
-        # for_green_ref = self.for_green_ref
-        # for_blue_ref_two_neighbor = self.for_blue_ref_two_neighbor
-
-        thickness_temp_red = np.repeat(
-            self.ele_undeformed[self.for_red_ref, 3::], 4, axis=0)
-        thickness_temp_green = np.repeat(
-            self.ele_undeformed[for_green_ref, 3::], 2, axis=0)
-        thickness_temp_blue = np.repeat(
-            self.ele_undeformed[self.for_blue_ref_one_neighbor +
-                                for_blue_ref_two_neighbor, 3::],
-            3, axis=0)
-
-        self.green_ele, self.red_ele = np.asarray(
-            self.green_ele), np.asarray(self.red_ele)
-        complete_red_cluster = np.hstack((self.red_ele, thickness_temp_red))
-        complete_green_cluster = np.hstack(
-            (self.green_ele, thickness_temp_green))
-        complete_blue_cluster = np.hstack((self.blue_ele, thickness_temp_blue))
-        self.ele_undeformed = np.delete(self.ele_undeformed,
-                                        [self.for_red_ref +
-                                         for_green_ref
-                                         ],
-                                        axis=0)
-
-        self.ele_undeformed = np.append(self.ele_undeformed, np.concatenate(
-            (complete_green_cluster, complete_red_cluster), axis=0), axis=0)
-
-    def append_mesh(self):
-        """
-        Append the new mid node coordinates to the mesh.
-        @return:
-        """
-
-        complete_mesh_cluster = np.hstack(
-            (self.bcs_mesh[:, 1::], np.zeros((len(self.bcs_mesh), 2), dtype=np.int)))
-        self.mesh_undeformed = np.append(
-            self.mesh_undeformed, complete_mesh_cluster, axis=0)
-
-    def write_file(self):
-        """
-        Write the new file.
-        @return:
-        """
-        self.file_name = "Undeformed_refined_mesh2.bcs"
-        file_length_ele = len(self.ele_undeformed)
-        file_length_mesh = len(self.mesh_undeformed)
-        file_length_bc = len(self.bc)
-        filter = [
-            "B-SIM - DATA OF THE SHEET\n",
-            "FULL\n",
-            "-111 1 1 1 1 1 1 END NOP\n",
-            "200.0  Char. dist\n",
-            "-111 1 1 1 1 1 1 END OF COORS\n",
-            "-111 1 1 1 1 1 1 END OF BCs\n",
-        ]
-        with open(os.path.join(self._out_path, self.file_name), "w") as bcs_amf:
-            bcs_amf.write(filter[0])
-            bcs_amf.write(filter[1])
-
-            # print(self.ele_undeformed)
-            for ele in range(file_length_ele):
-                bcs_amf.write(
-                    "{:5d}{:7d}{:7d}{:7d}{:16.6f}{:16.6f}\n".format(
-                        ele + 1,
-                        int(self.ele_undeformed[ele, 0]),
-                        int(self.ele_undeformed[ele, 1]),
-                        int(self.ele_undeformed[ele, 2]),
-                        self.ele_undeformed[ele, 3],
-                        self.ele_undeformed[ele, 4],
-
-                    )
-                )
-
-            bcs_amf.write(filter[2])
-            bcs_amf.write(filter[3])
-
-            for ele in range(file_length_mesh):
-                bcs_amf.write(
-                    "{:5d}{:16.6f}{:16.6f}{:16.6f}{:2d}{:2d}\n".format(
-                        ele + 1,
-                        self.mesh_undeformed[ele, 0],
-                        self.mesh_undeformed[ele, 1],
-                        self.mesh_undeformed[ele, 2],
-                        self.mesh_undeformed[ele, 3].astype(np.int),
-                        self.mesh_undeformed[ele, 4].astype(np.int),
-
-                    )
-                )
-
-            bcs_amf.write(filter[4])
-            for bc in range(file_length_bc):
-                bcs_amf.write("{:5d}{:6d}\n".format(
-                    self.bc[bc, 0].astype(np.int), self.bc[bc, 1].astype(np.int)))
-            bcs_amf.write(filter[4])
-            bcs_amf.close
-
-    def check_success(self):
-        """
-        Checks if the file exisits.
-        @return:
-        """
-        if os.path.exists(os.path.join(self.__check_out_path, self.file_name)):
-            print("Success!!")
-        else:
-            raise RuntimeError("Did not complete")

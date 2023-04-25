@@ -1,10 +1,10 @@
 import os
 from bcs_read import bcs_data
 from AMR import AMR
-from AMR import write_file
+from bcs_write import write_file
 
-path = r"C:/Users/Kind/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/*"
-out_path = r"C:/Users/Kind/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out"
+path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/*"
+out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out"
 thickness = 50
 
 
