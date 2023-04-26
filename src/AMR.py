@@ -583,11 +583,12 @@ class AMR:
             for marked_ele in marked_neighbor:
                 second_blue_marked_neighbor.append(
                     second_neighbor[marked_ele, 0])
-        self.second_blue_marked_neighbor.append(np.asarray(second_blue_marked_neighbor))
+        #self.second_blue_marked_neighbor.append(np.asarray(second_blue_marked_neighbor))
         # Create a second list
 
         if for_blue_ref:
-            self.for_blue_ref_two_neighbor.append(for_blue_ref)
+            pass
+            #self.for_blue_ref_two_neighbor.append(for_blue_ref)
         if for_green_ref:
             self.for_green_ref.append(for_green_ref)
 
@@ -817,7 +818,8 @@ class AMR:
 
         return mid_node, no_match, edge_match
 
-    def keep_rotation_direction(self, nodes_neighbor, nodes):
+    @staticmethod
+    def keep_rotation_direction(nodes_neighbor, nodes, nodes_where_longest, ele):
         """
         Neighboring nodes change their order to keep the rotation direction. Therefore it's very important
         to place the nodes at the right position, because they differ depending on the neighbor node position
@@ -841,26 +843,49 @@ class AMR:
             )
 
             keep_node_index.append(
-                np.where(keep_node[index] == row[1])[0][0]
+                np.where(
+                    keep_node[index] == row[1])[0][0].astype(np.int)
             )
 
         index = np.c_[idx1, idx2]
+        nodes = np.array(nodes)
 
-        return keep_node, index, keep_node_index
+        node_rotation = AMR.nodes_rotation(keep_node_index, nodes)
 
-    def rotation_direction(self, nodes_neighbor, nodes):
-
-        keep_nodes = []
-        idx = []
-        for index, row in enumerate(zip(nodes, nodes_neighbor)):
-            keep_nodes.append(np.setxor1d(
-                np.intersect1d(row[0], row[1]), row[0])
-            )
-            idx.append(
-                np.where(keep_nodes[index] == row[0])
+        node_to_close_element = []
+        le = [nodes_where_longest[idx] for idx in ele]
+        for idx, elements in enumerate(le):
+            node_to_close_element.append(
+                int(np.setxor1d(elements, nodes[idx])[0])
             )
 
-        return keep_nodes
+        return keep_node, index, keep_node_index, node_to_close_element, node_rotation
+
+    @staticmethod
+    def nodes_rotation(keep_node_index, nodes):
+        """
+        Check the nodes rotation
+        @param keep_node_index:
+        @param nodes:
+        return: node_rotation
+        """
+
+        node_rotation = []
+        for idx, row in enumerate(keep_node_index):
+            if row == 1:
+                node_rotation.append(
+                    np.array((nodes[idx, 2], nodes[idx, 0]))
+                )
+            elif row == 2:
+                node_rotation.append(
+                    np.array((nodes[idx, 0], nodes[idx, 1]))
+                )
+            else:
+                node_rotation.append(
+                    np.array((nodes[idx, 1], nodes[idx, 2]))
+                )
+        return node_rotation
+
 
     def red_pattern(self, mid_nodes_coor, ele):
         """
@@ -974,13 +999,13 @@ class AMR:
 
         if iteration == 0:
             nodes_neighbor = self.nodes_array(self.green_marked_neighbor)
-            keep_node, index, _ = self.keep_rotation_direction(
-                nodes_neighbor, nodes)
+            keep_node, index, _, _, _ = self.keep_rotation_direction(
+                nodes_neighbor, nodes, nodes_where_longest, ele)
         else:
             nodes_neighbor = self.nodes_array(
                 self.green_marked_neighbor[iteration])
-            keep_node, index, _ = self.keep_rotation_direction(
-                nodes_neighbor, nodes)
+            keep_node, index, _, _, _ = self.keep_rotation_direction(
+                nodes_neighbor, nodes, nodes_where_longest, ele)
 
         for count, row_nodes in enumerate(zip(nodes_neighbor,
                                               np.concatenate(mid_node)
@@ -1043,7 +1068,7 @@ class AMR:
         except ValueError:
             raise 'Shape mismatch in longest edge and not longest edge in the blue element cluster'
 
-        self.blue_pattern(
+        self.create_blue_pattern_one_neighbor(
             one_neighbor,
             ele_one_neighbor,
             self.blue_marked_neighbor,
@@ -1103,13 +1128,13 @@ class AMR:
         if iteration == 0:
             self.create_blue_pattern_two_neighbor(two_neighbor,
                                                   ele_two_neighbor,
-                                                  self.second_blue_marked_neighbor,
-                                                  nodes_along_second_neighbor)
+                                                  nodes_along_second_neighbor,
+                                                  longest_edge)
         else:
             self.create_blue_pattern_two_neighbor(two_neighbor,
                                                   ele_two_neighbor,
-                                                  self.second_blue_marked_neighbor[iteration],
-                                                  nodes_along_second_neighbor)
+                                                  nodes_along_second_neighbor,
+                                                  longest_edge)
 
     def create_blue_pattern_one_neighbor(self, one_neighbor, ele, neighbor, nodes_where_longest):
         """
@@ -1118,45 +1143,23 @@ class AMR:
         @param ele:
         @return:
         """
-        nodes = self.nodes_array(ele[-5:])
-        nodes_neighbor = self.nodes_array(neighbor[-5:])
-        keep_node, index, keep_node_index = self.keep_rotation_direction(
-            nodes_neighbor, nodes)
+        nodes = self.nodes_array(ele)
+        nodes_neighbor = self.nodes_array(neighbor)
+        keep_node, index, keep_node_index, node_to_close_element, node_rotation = self.keep_rotation_direction(
+            nodes_neighbor, nodes, nodes_where_longest, ele)
 
-        new_nodes = []
-        for idx, row in enumerate(keep_node_index):
-            if row == 1:
-                new_nodes.append(
-                    np.array((nodes[idx, 2], nodes[idx, 0]))
-                )
-            elif row == 2:
-                new_nodes.append(
-                    np.array((nodes[idx, 0], nodes[idx, 1]))
-                )
-            else:
-                new_nodes.append(
-                    np.array((nodes[idx, 1], nodes[idx, 2]))
-                )
-
-        node_rotation = []
-        le = [nodes_where_longest[idx] for idx in ele[-5:]]
-        for idx, elements in enumerate(le):
-            node_rotation.append(
-                int(np.setxor1d(elements, nodes[idx])[0])
-            )
-
-        for count, row_nodes in enumerate(zip(new_nodes[-5:],
-                                              one_neighbor[-5:])):
-            if node_rotation[count] == row_nodes[0][0]:
+        for count, row_nodes in enumerate(zip(node_rotation,
+                                              one_neighbor)):
+            if node_to_close_element[count] == row_nodes[0][0]:
                 self.blue_ele.append(
                     np.array(
-                        (keep_node[count], node_rotation[count], row_nodes[1][1])
+                        (keep_node[count], node_to_close_element[count], row_nodes[1][1])
                     )
                 )
             else:
                 self.blue_ele.append(
                     np.array(
-                        (keep_node[count], row_nodes[1][1], node_rotation[count])
+                        (keep_node[count], row_nodes[1][1], node_to_close_element[count])
                     )
                 )
             self.blue_ele.append(
@@ -1170,7 +1173,7 @@ class AMR:
                 )
             )
 
-    def create_blue_pattern_two_neighbor(self, two_neighbor, ele, neighbor, nodes_along_second_neighbor):
+    def create_blue_pattern_two_neighbor(self, two_neighbor, ele, nodes_along_second_neighbor, nodes_where_longest):
 
         """
         This function creates the blue pattern for elements which have one or two neighbors.
@@ -1181,46 +1184,74 @@ class AMR:
         @return:
         """
 
-        nodes = self.ele_undeformed[ele[-5:], 0:3]
+        nodes = self.ele_undeformed[ele, 0:3]
 
-        neighbor_one = nodes_along_second_neighbor[0:len(ele)*2:2][-5:]
-        neighbor_two = nodes_along_second_neighbor[1:len(ele)*2:2][-5:]
+        neighbor_one = nodes_along_second_neighbor[0:len(ele) * 2:2]
+        neighbor_two = nodes_along_second_neighbor[1:len(ele) * 2:2]
 
-        nodes_rotation = []
+        unmarked_edge = []
+        keep_node = []
+        keep_node_index = []
+        along_longest_edge = []
+        index_longest_edge_node = []
+        le = [nodes_where_longest[idx] for idx in ele]
         for row in range(len(nodes)):
             node_rotation = np.setxor1d(
-                    neighbor_one[row], neighbor_two[row]
-                ).astype(np.int)
+                neighbor_one[row], neighbor_two[row]
+            ).astype(np.int)
 
-            nodes_rotation.append(
+            unmarked_edge.append(
                 sorted(node_rotation, key=lambda x: nodes[row].tolist().index(x))
             )
 
-        """
-        for count, row_nodes in enumerate(two_neighbor[-5:]):
-            if node_rotation[count] == row_nodes[0][0]:
+            keep_node.append(
+                np.setxor1d(
+                    unmarked_edge[row], nodes[row]
+                )[0]
+            )
+
+            keep_node_index.append(
+                np.where(
+                    keep_node[row] == nodes[row]
+                )[0][0]
+            )
+
+            along_longest_edge.append(
+                np.intersect1d(
+                    le[row], unmarked_edge[row]
+                ).astype(np.int)[0]
+            )
+
+            index_longest_edge_node.append(
+                np.where(
+                    along_longest_edge[row] == unmarked_edge[row]
+                )[0][0]
+            )
+        for count, row_nodes in enumerate(two_neighbor):
+            if keep_node_index[count] == 1:
                 self.blue_ele.append(
                     np.array(
-                        (nodes_rotation[count][0], nodes_rotation[count][1], row_nodes[1])
+                        (unmarked_edge[count][0], row_nodes[index_longest_edge_node[count]], unmarked_edge[count][1])
                     )
                 )
             else:
                 self.blue_ele.append(
                     np.array(
-                        (keep_node[count], row_nodes[1][1], node_rotation[count])
+                        (unmarked_edge[count][0], unmarked_edge[count][1], row_nodes[index_longest_edge_node[count]])
                     )
                 )
             self.blue_ele.append(
-            np.array(
-                    (row_nodes[1][0], row_nodes[1][1], row_nodes[0][0])
+                np.array(
+                    (row_nodes[0], unmarked_edge[count][1], row_nodes[1])
                 )
             )
             self.blue_ele.append(
-            np.array(
-                    (row_nodes[0][1], row_nodes[1][1], row_nodes[1][0])
+                np.array(
+                    (keep_node[count], row_nodes[0], row_nodes[1])
                 )
             )
-    """
+
+
     def create_first_pattern(self,
                              nodes_where_longest,
                              red_ele,
@@ -1244,8 +1275,8 @@ class AMR:
 
         self.green_pattern(nodes_where_longest, green_ele, 0)
 
-        # self.blue_pattern_one_neighbor(
-        #    nodes_where_longest, blue_ele_one_neighbor, nodes_where_longest)
+        self.blue_pattern_one_neighbor(
+            nodes_where_longest, blue_ele_one_neighbor, nodes_where_longest)
 
         self.blue_pattern_two_neighbor(
             nodes_where_longest, blue_ele_two_neighbor, 0)
@@ -1264,11 +1295,11 @@ class AMR:
             iteration += 1
             self.green_pattern(nodes_where_longest, ele, iteration)
 
-        for iteration, blue_ele in enumerate(blue_ele_two_neighbor[1::]):
-            iteration += 1
-            if isinstance(blue_ele_two_neighbor, list):
-                self.blue_pattern_two_neighbor(
-                    nodes_where_longest, blue_ele, iteration)
+        #for iteration, blue_ele in enumerate(blue_ele_two_neighbor[1::]):
+        #    iteration += 1
+        #    if isinstance(blue_ele_two_neighbor, list):
+        #        self.blue_pattern_two_neighbor(
+        #            nodes_where_longest, blue_ele, iteration)
 
     def main_amr(self):
         """
@@ -1321,10 +1352,10 @@ class AMR:
                                   self.for_blue_ref_one_neighbor,
                                   self.for_blue_ref_two_neighbor)
         self.all_marked_elements()
-        # self.remove_hanging_nodes(hanging_nodes_red,
-        #                          hanging_nodes_blue,
-        #                          nodes_where_longest)#
+        self.remove_hanging_nodes(hanging_nodes_red,
+                                  hanging_nodes_blue,
+                                  nodes_where_longest)
 
-        # self.create_second_pattern(nodes_where_longest,
-        #                           self.for_green_ref,
-        #                           self.for_blue_ref_two_neighbor)
+        self.create_second_pattern(nodes_where_longest,
+                                   self.for_green_ref,
+                                   self.for_blue_ref_two_neighbor)

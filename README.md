@@ -17,18 +17,16 @@ is based on the thickness difference between undeformed and deformed shell eleme
 **Current status**
 
 
-At the moment, the elements seem to be marked correctly, and the refinement takes place. But there are
-problems with the node assignment and rotation. 
-
-Some elements work fine with the current state of the algorithm:
+Solved most of the rotation problems and the mesh looks good in most parts. 
 
 
-<img src="img/correct_marked.jpg" width="300" height="300" alt="Correct refined">
+<img src="img/solved_rotation_issue.jpg" width="300" height="300" alt="Correct refined">
 
 
-And some elements are broken because the wrong nodes are assigned:
+In some parts there are still hanging nodes which occur because of a bug
+in the second iteration loop
 
 
-<img src="img/wrong_marked.jpg" width="300" height="300" alt="Wrong refined">
+<img src="img/hanging_nodes.jpg" width="300" height="300" alt="Wrong refined">
 
 

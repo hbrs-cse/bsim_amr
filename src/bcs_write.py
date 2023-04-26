@@ -58,23 +58,26 @@ class write_file:
         for_green_ref = []
         for_blue_ref_two_neighbor = []
 
-        # for all_ele in self.for_green_ref:
-        #    for_green_ref += all_ele
-        # for all_ele in self.for_blue_ref_two_neighbor:
-        #    for_blue_ref_two_neighbor += all_ele
+        for all_ele in self.for_green_ref:
+            for_green_ref += all_ele
+        for all_ele in self.for_blue_ref_two_neighbor:
+            for_blue_ref_two_neighbor += all_ele
 
-        for_green_ref = self.for_green_ref
-        for_blue_ref_two_neighbor = self.for_blue_ref_two_neighbor
+        # for_green_ref = self.for_green_ref
+        # for_blue_ref_two_neighbor = self.for_blue_ref_two_neighbor
 
-        blue_elements = self.ele_undeformed[
-            self.for_blue_ref_two_neighbor[-5:], 3::
-        ]
+        blue_elements_one = self.ele_undeformed[
+                            self.for_blue_ref_one_neighbor, 3::
+                            ]
+        blue_elements_two = self.ele_undeformed[
+                            for_blue_ref_two_neighbor, 3::
+                            ]
         green_elements = self.ele_undeformed[
-           for_green_ref, 3::
-        ]
+                         for_green_ref, 3::
+                         ]
         red_elements = self.ele_undeformed[
-            self.for_red_ref, 3::
-        ]
+                       self.for_red_ref, 3::
+                       ]
 
         thickness_temp_red = np.repeat(
             red_elements, 4, axis=0
@@ -82,9 +85,14 @@ class write_file:
         thickness_temp_green = np.repeat(
             green_elements, 2, axis=0
         )
-        thickness_temp_blue = np.repeat(
-            blue_elements, 3, axis=0
+        thickness_temp_blue_one = np.repeat(
+            blue_elements_one, 3, axis=0
         )
+        thickness_temp_blue_two = np.repeat(
+            blue_elements_two, 3, axis=0
+        )
+        thickness_temp_blue = thickness_temp_blue_one.tolist() + \
+                              thickness_temp_blue_two.tolist()
 
         self.green_ele, self.red_ele = np.asarray(
             self.green_ele), np.asarray(self.red_ele)
@@ -102,7 +110,8 @@ class write_file:
         self.ele_undeformed = np.delete(self.ele_undeformed,
                                         [self.for_red_ref +
                                          for_green_ref +
-                                         self.for_blue_ref_two_neighbor[-5:]
+                                         self.for_blue_ref_one_neighbor +
+                                         for_blue_ref_two_neighbor
                                          ],
                                         axis=0)
 
@@ -131,7 +140,7 @@ class write_file:
         Write the new file.
         @return:
         """
-        self.file_name = "Undeformed_refined_mesh2.bcs"
+        self.file_name = "Undeformed_refined_mesh3.bcs"
         file_length_ele = len(self.ele_undeformed)
         file_length_mesh = len(self.mesh_undeformed)
         file_length_bc = len(self.bc)
