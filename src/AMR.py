@@ -583,12 +583,11 @@ class AMR:
             for marked_ele in marked_neighbor:
                 second_blue_marked_neighbor.append(
                     second_neighbor[marked_ele, 0])
-        #self.second_blue_marked_neighbor.append(np.asarray(second_blue_marked_neighbor))
+        self.second_blue_marked_neighbor.append(np.asarray(second_blue_marked_neighbor))
         # Create a second list
 
         if for_blue_ref:
-            pass
-            #self.for_blue_ref_two_neighbor.append(for_blue_ref)
+            self.for_blue_ref_two_neighbor.append(for_blue_ref)
         if for_green_ref:
             self.for_green_ref.append(for_green_ref)
 
@@ -934,22 +933,6 @@ class AMR:
                 (row_nodes[1][0], row_nodes[2][1], row_nodes[1][1])
             ))
 
-        """
-        for i in range(len(mid_nodes)):
-            self.red_ele.append(np.array(
-                # x1*,                 x2*,               x3*
-                (mid_nodes[i, 0], mid_nodes[i, 1], mid_nodes[i, 2]), dtype=np.int
-            ))
-            self.red_ele.append(np.array(
-                (new_nodes[i, 0], mid_nodes[i, 0], mid_nodes[i, 1]), dtype=np.int
-            ))
-            self.red_ele.append(np.array(
-                (mid_nodes[i, 0], new_nodes[i, 1], mid_nodes[i, 2]), dtype=np.int
-            ))
-            self.red_ele.append(np.array(
-                (mid_nodes[i, 1], mid_nodes[i, 2], new_nodes[i, 2]), dtype=np.int
-            ))
-        """
         #              x3
         #            /  |  \
         #           /   |   \
@@ -1295,11 +1278,11 @@ class AMR:
             iteration += 1
             self.green_pattern(nodes_where_longest, ele, iteration)
 
-        #for iteration, blue_ele in enumerate(blue_ele_two_neighbor[1::]):
-        #    iteration += 1
-        #    if isinstance(blue_ele_two_neighbor, list):
-        #        self.blue_pattern_two_neighbor(
-        #            nodes_where_longest, blue_ele, iteration)
+        for iteration, blue_ele in enumerate(blue_ele_two_neighbor[1::]):
+            iteration += 1
+            if isinstance(blue_ele_two_neighbor, list):
+                self.blue_pattern_two_neighbor(
+                    nodes_where_longest, blue_ele, iteration)
 
     def main_amr(self):
         """
