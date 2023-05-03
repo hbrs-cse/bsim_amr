@@ -107,7 +107,7 @@ class BSimAmr:
         self.recursive_amr.bc = self.bc
         self.recursive_amr.set_thickness_diff
         self.recursive_amr.main_recursive_amr()
-        self.write = write_file(self.amr, out_path)
+        self.write = write_file(self.recursive_amr, out_path)
         self.write.check_out_path
         self.write.check_path()
         self.write.manipulate_ele()

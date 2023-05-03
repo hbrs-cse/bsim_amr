@@ -58,22 +58,14 @@ class write_file:
         for_green_ref = []
         for_blue_ref_two_neighbor = []
 
-        for all_ele in self.for_green_ref:
-            for_green_ref += all_ele
-        for all_ele in self.for_blue_ref_two_neighbor:
-            for_blue_ref_two_neighbor += all_ele
-
-        # for_green_ref = self.for_green_ref
-        # for_blue_ref_two_neighbor = self.for_blue_ref_two_neighbor
-
         blue_elements_one = self.ele_undeformed[
                             self.for_blue_ref_one_neighbor, 3::
                             ]
         blue_elements_two = self.ele_undeformed[
-                            for_blue_ref_two_neighbor, 3::
+                            self.for_blue_ref_two_neighbor, 3::
                             ]
         green_elements = self.ele_undeformed[
-                         for_green_ref, 3::
+                         self.for_green_ref, 3::
                          ]
         red_elements = self.ele_undeformed[
                        self.for_red_ref, 3::
@@ -109,9 +101,9 @@ class write_file:
 
         self.ele_undeformed = np.delete(self.ele_undeformed,
                                         [self.for_red_ref +
-                                         for_green_ref +
+                                         self.for_green_ref +
                                          self.for_blue_ref_one_neighbor +
-                                         for_blue_ref_two_neighbor
+                                         self.for_blue_ref_two_neighbor
                                          ],
                                         axis=0)
 
@@ -140,7 +132,7 @@ class write_file:
         Write the new file.
         @return:
         """
-        self.file_name = "Undeformed_refined_mesh3.bcs"
+        self.file_name = "Undeformed_refined_mesh4.bcs"
         file_length_ele = len(self.ele_undeformed)
         file_length_mesh = len(self.mesh_undeformed)
         file_length_bc = len(self.bc)
