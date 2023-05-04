@@ -285,6 +285,7 @@ class recursive_AMR:
             self.all_ele = self.for_red_ref
             self.all_ele = np.asarray(
                 self.all_ele).reshape(len(self.all_ele), 1)
+
     def count_occurence(self, marked_edges, all_edges, nodes_where_longest):
 
         marked_edge = []
@@ -394,7 +395,7 @@ class recursive_AMR:
                                         marked_ele[true_indice[0]]
                                     )
                             blue.append(idx)
-
+            """
             print(len(new_marked_ele))
             print('blue one',len(self.for_blue_ref_one_neighbor))
             print('green', len(self.for_green_ref))
@@ -403,6 +404,7 @@ class recursive_AMR:
             print('new red', len(red))
             print('new blue', len(blue))
             print('red normal', len(red_normal))
+            """
             if len(new_marked_ele) > 0:
                 hanging_edges = self.assign_new_elements(
                     longest_edges,
@@ -416,10 +418,13 @@ class recursive_AMR:
         inter_blue_one_neighbor_red = np.intersect1d(self.for_blue_ref_one_neighbor, self.for_red_ref)
         inter_blue_two_neighbor_red = np.intersect1d(self.for_blue_ref_two_neighbor, self.for_red_ref)
         inter_green_red = np.intersect1d(self.for_green_ref, self.for_red_ref)
+        inter_green_blue_two_neighbor = np.intersect1d(self.for_green_ref, self.for_blue_ref_two_neighbor)
+        inter_green_blue_one_neighbor = np.intersect1d(self.for_green_ref, self.for_blue_ref_one_neighbor)
+        inter_blue = np.intersect1d(self.for_blue_ref_two_neighbor, self.for_blue_ref_one_neighbor)
 
         return all_edges
 
-    def assign_new_elements(self, longest_edges,hanging_edges):
+    def assign_new_elements(self, longest_edges, hanging_edges):
         self.all_marked_elements()
         hanging_edges = np.append(
             hanging_edges,
@@ -488,7 +493,7 @@ class recursive_AMR:
             matching_c = np.where(
                 (self.bcs_mesh[:, 1:4] == coors).all(axis=1))[0]
             if matching_c or matching_c == 0:
-                idx_cluster.append(matching_c)
+                idx_cluster.append(matching_c[0])
             else:
                 no_match.append(idx)
         if shape:
@@ -729,18 +734,18 @@ class recursive_AMR:
             del self.green_marked_neighbor[idx]
             del nodes[idx]
         nodes_neighbor = self.nodes_array(self.green_marked_neighbor)
-        keep_node, index, _, _, _ = self.keep_rotation_direction(
+        keep_node, index, _, _, nodes_longest_edge = self.keep_rotation_direction(
             nodes_neighbor, nodes, nodes_where_longest, ele)
 
-
-        for count, row_nodes in enumerate(zip(nodes_neighbor,
-                                              np.concatenate(mid_node)
-                                              )):
+        for count, row_nodes in enumerate(zip(nodes_longest_edge,
+                                              mid_node
+                                              )
+                                          ):
             self.green_ele.append(np.array(
-                (row_nodes[0][index[count, 0]], row_nodes[1], keep_node[count])
+                (row_nodes[1], keep_node[count], row_nodes[0][0])
             ))
             self.green_ele.append(np.array(
-                (row_nodes[0][index[count, 1]], keep_node[count], row_nodes[1])
+                (row_nodes[1], row_nodes[0][1], keep_node[count])
             ))
 
     #              x3
@@ -831,7 +836,6 @@ class recursive_AMR:
             result = np.where(
                 (longest_edge == nodes).all(axis=1)
             )[0]
-            print(idx, result)
             if len(result) > 1:
                 nodes_nle.append(nodes)
             elif not result:
@@ -852,7 +856,6 @@ class recursive_AMR:
             two_neighbor = np.c_[match_two, match_two_nle]
         except ValueError:
             raise 'Shape mismatch in longest edge and not longest edge in the blue element cluster'
-
 
         self.create_blue_pattern_two_neighbor(two_neighbor,
                                               ele_two_neighbor,
@@ -990,4 +993,3 @@ class recursive_AMR:
 
         self.blue_pattern_two_neighbor(
             nodes_where_longest, self.for_blue_ref_two_neighbor)
-
