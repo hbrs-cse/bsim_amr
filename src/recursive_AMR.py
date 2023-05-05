@@ -238,36 +238,6 @@ class recursive_AMR:
 
         return all_neighbor
 
-    def direct_neighbor(self, nodes):
-        """
-        See the find_intersection functions docstring for more information.
-
-        After determining the direct neighbor, a loop checks whether the direct neighbor of the marked elements
-        is somewhere in the list of marked elements or if it's an element that has toi be green/blue refined.
-        @return:direct_neighbor, marked_ele
-        """
-
-        check_nodes = self.ele_undeformed[:, 0:3]
-
-        neighbor_collection = []
-
-        for i, row in enumerate(nodes):
-
-            all_neighbor = np.asarray(recursive_AMR.neighbor_intersection(row, check_nodes))
-
-            all_neighbor = recursive_AMR.swap_neighbor(all_neighbor)
-
-            try:
-                for idx, list_counter in enumerate(all_neighbor):
-                    neighbor_collection.append(list_counter)
-
-            except ValueError:
-                raise "Something went wrong while determining the direct neighbor..."
-
-        direct_neighbor = np.asarray(neighbor_collection)[:, 1]
-        marked_ele = np.asarray(neighbor_collection)[:, 0]
-        return direct_neighbor, marked_ele
-
     def all_marked_elements(self):
         """
         Concatenate all marked elements.
@@ -647,6 +617,71 @@ class recursive_AMR:
 
         return mid_node, no_match, edge_match
 
+    def find_vertex_and_mid_node(self, nodes,
+                                 neighbor_one,
+                                 neighbor_two,
+                                 two_neighbor,
+                                 mid_node_with_le):
+        """
+        Find the node that closes the element and the corresponding vertex node. This is important because
+        otherwise it's unclear which mid node should be used to create the blue element with two neighbots.
+        @param nodes:
+        @param neighbor_one:
+        @param neighbor_two:
+        @param two_neighbor:
+        @param mid_node_with_le:
+        @return: unmarked_edge, node_to_close, vertex_node
+        """
+
+        node_rotation = []
+        keep_node = []
+        keep_node_index = []
+        node_to_close = []
+        vertex_node = []
+
+        for row in range(len(nodes)):
+            node_rotation.append(np.setxor1d(
+                neighbor_one[row], neighbor_two[row]
+            ).astype(np.int)
+                                 )
+
+            keep_node.append(
+                np.setxor1d(
+                    node_rotation[row], nodes[row]
+                )[0]
+            )
+
+            keep_node_index.append(
+                np.where(
+                    keep_node[row] == nodes[row]
+                )[0][0]
+
+            )
+
+        unmarked_edge = self.nodes_rotation(keep_node_index, nodes)
+
+        for edge in range(len(keep_node_index)):
+            longest_edge_to_node = np.intersect1d(
+                unmarked_edge[edge][0], mid_node_with_le[1][edge]
+            )
+
+            if longest_edge_to_node:
+                node_to_close.append(
+                    two_neighbor[edge][0]
+                )
+                vertex_node.append(
+                    two_neighbor[edge][1]
+                )
+            else:
+                node_to_close.append(
+                    two_neighbor[edge][1]
+                )
+                vertex_node.append(
+                    two_neighbor[edge][0]
+                )
+
+        return unmarked_edge, node_to_close, vertex_node, keep_node
+
     def red_pattern(self, mid_nodes_coor, ele):
         """
         Creates a pattern for the red refined elements. First of all we use the list of unique elements (bcs_mesh)
@@ -845,6 +880,9 @@ class recursive_AMR:
             match_two, no_match_two, edge_match = self.search_mid_point(longest_edge,
                                                                         nodes_two_neighbor,
                                                                         shape=None)
+            le_to_mid_node = [longest_edge[edge] for edge in edge_match]
+
+
             mid_node_c = self.calculate_mid_node(nodes_nle, len(nodes_nle))
 
             match_two_nle, no_match_two_nle = self.find_matching_mid_node(mid_node_c,
@@ -854,13 +892,15 @@ class recursive_AMR:
 
         try:
             two_neighbor = np.c_[match_two, match_two_nle]
+            mid_node_with_le = np.array((match_two, le_to_mid_node))
+            mid_node_with_nle = np.array((match_two_nle, nodes_nle))
         except ValueError:
             raise 'Shape mismatch in longest edge and not longest edge in the blue element cluster'
 
         self.create_blue_pattern_two_neighbor(two_neighbor,
                                               ele_two_neighbor,
                                               nodes_along_second_neighbor,
-                                              longest_edge)
+                                              mid_node_with_le)
 
     def create_blue_pattern_one_neighbor(self, one_neighbor, ele, neighbor, nodes_where_longest):
         """
@@ -899,81 +939,47 @@ class recursive_AMR:
                 )
             )
 
-    def create_blue_pattern_two_neighbor(self, two_neighbor, ele, nodes_along_second_neighbor, nodes_where_longest):
+    def create_blue_pattern_two_neighbor(self,
+                                         two_neighbor,
+                                         ele,
+                                         nodes_along_second_neighbor,
+                                         mid_node_with_le):
 
         """
         This function creates the blue pattern for elements which have one or two neighbors.
-        @param neighbor:
         @param two_neighbor:
-        @param nodes_along_seconf_neighbor:
+        @param nodes_along_second_neighbor:
         @param ele:
+        @param nodes_where_longest:
+        @param mid_node_with_nle:
+        @param mid_node_with_le:
         @return:
         """
 
         nodes = self.ele_undeformed[ele, 0:3]
-
         neighbor_one = nodes_along_second_neighbor[0:len(ele) * 2:2]
         neighbor_two = nodes_along_second_neighbor[1:len(ele) * 2:2]
 
-        unmarked_edge = []
-        keep_node = []
-        keep_node_index = []
-        along_longest_edge = []
-        index_longest_edge_node = []
-        le = [nodes_where_longest[idx] for idx in ele]
-        for row in range(len(nodes)):
-            node_rotation = np.setxor1d(
-                neighbor_one[row], neighbor_two[row]
-            ).astype(np.int)
+        unmarked_edge, node_to_close, vertex_node, keep_node = self.find_vertex_and_mid_node(nodes,
+                                                                                             neighbor_one,
+                                                                                             neighbor_two,
+                                                                                             two_neighbor,
+                                                                                             mid_node_with_le)
 
-            unmarked_edge.append(
-                sorted(node_rotation, key=lambda x: nodes[row].tolist().index(x))
-            )
-
-            keep_node.append(
-                np.setxor1d(
-                    unmarked_edge[row], nodes[row]
-                )[0]
-            )
-
-            keep_node_index.append(
-                np.where(
-                    keep_node[row] == nodes[row]
-                )[0][0]
-            )
-
-            along_longest_edge.append(
-                np.intersect1d(
-                    le[row], unmarked_edge[row]
-                ).astype(np.int)[0]
-            )
-
-            index_longest_edge_node.append(
-                np.where(
-                    along_longest_edge[row] == unmarked_edge[row]
-                )[0][0]
-            )
-        for count, row_nodes in enumerate(two_neighbor):
-            if keep_node_index[count] == 1:
-                self.blue_ele.append(
-                    np.array(
-                        (unmarked_edge[count][0], row_nodes[index_longest_edge_node[count]], unmarked_edge[count][1])
-                    )
-                )
-            else:
-                self.blue_ele.append(
-                    np.array(
-                        (unmarked_edge[count][0], unmarked_edge[count][1], row_nodes[index_longest_edge_node[count]])
-                    )
-                )
+        for count, (node_to_close, vertex_node) in enumerate(zip(node_to_close, vertex_node)):
             self.blue_ele.append(
                 np.array(
-                    (row_nodes[0], unmarked_edge[count][1], row_nodes[1])
+                    (unmarked_edge[count][0],  unmarked_edge[count][1], node_to_close)
                 )
             )
             self.blue_ele.append(
                 np.array(
-                    (keep_node[count], row_nodes[0], row_nodes[1])
+                    (node_to_close, unmarked_edge[count][1], vertex_node)
+                )
+            )
+            self.blue_ele.append(
+                np.array(
+                    (keep_node[count], node_to_close, vertex_node)
                 )
             )
 

@@ -55,8 +55,6 @@ class write_file:
         Update the old ndarray with the unrefined elements. Also keep thickness and temperature of the marked and
         refined elements the same. Delete the elements from the mesh which are marked
         """
-        for_green_ref = []
-        for_blue_ref_two_neighbor = []
 
         blue_elements_one = self.ele_undeformed[
                             self.for_blue_ref_one_neighbor, 3::
