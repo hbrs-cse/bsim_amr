@@ -130,7 +130,7 @@ class write_file:
         Write the new file.
         @return:
         """
-        self.file_name = "Undeformed_refined_mesh4.bcs"
+        self.file_name = "Undeformed_refined_mesh6.bcs"
         file_length_ele = len(self.ele_undeformed)
         file_length_mesh = len(self.mesh_undeformed)
         file_length_bc = len(self.bc)
