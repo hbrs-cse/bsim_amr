@@ -99,9 +99,9 @@ class write_file:
 
         self.ele_undeformed = np.delete(self.ele_undeformed,
                                         [self.for_red_ref +
-                                         self.for_green_ref +
-                                         self.for_blue_ref_one_neighbor +
-                                         self.for_blue_ref_two_neighbor
+                                        self.for_blue_ref_one_neighbor +
+                                        self.for_green_ref +
+                                        self.for_blue_ref_two_neighbor
                                          ],
                                         axis=0)
 
