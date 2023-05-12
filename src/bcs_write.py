@@ -82,7 +82,7 @@ class write_file:
             blue_elements_two, 3, axis=0
         )
         thickness_temp_blue = thickness_temp_blue_one.tolist() + \
-                              thickness_temp_blue_two.tolist()
+                            thickness_temp_blue_two.tolist()
 
         self.green_ele, self.red_ele = np.asarray(
             self.green_ele), np.asarray(self.red_ele)
@@ -99,8 +99,8 @@ class write_file:
 
         self.ele_undeformed = np.delete(self.ele_undeformed,
                                         [self.for_red_ref +
-                                        self.for_blue_ref_one_neighbor +
                                         self.for_green_ref +
+                                        self.for_blue_ref_one_neighbor +
                                         self.for_blue_ref_two_neighbor
                                          ],
                                         axis=0)
@@ -108,11 +108,13 @@ class write_file:
         self.ele_undeformed = np.append(
             self.ele_undeformed,
             np.concatenate(
-                (complete_red_cluster,
+                (
+                 complete_red_cluster,
                  complete_green_cluster,
                  complete_blue_cluster),
                 axis=0),
             axis=0)
+
 
     def append_mesh(self):
         """
@@ -130,7 +132,7 @@ class write_file:
         Write the new file.
         @return:
         """
-        self.file_name = "Undeformed_refined_mesh6.bcs"
+        self.file_name = "Undeformed_refined_mesh7.bcs"
         file_length_ele = len(self.ele_undeformed)
         file_length_mesh = len(self.mesh_undeformed)
         file_length_bc = len(self.bc)
