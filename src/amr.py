@@ -2,7 +2,7 @@ from bcs_read import bcs_data
 import numpy as np
 
 
-class recursive_AMR:
+class AMR:
     """
     This is the main class for executing the adaptive mesh refinement based on the RGB refinement strategy
     """
@@ -49,7 +49,8 @@ class recursive_AMR:
         diff_calc = []
         for ele in range(len(self.ele_undeformed)):
             diff_calc.append((1 - (y[ele] - x[ele]) / y[ele])
-                             * 100)
+                             * 100
+                             )
         diff_calc = np.asarray(diff_calc)
 
         return diff_calc
@@ -57,8 +58,7 @@ class recursive_AMR:
     @property
     def set_thickness_diff(self):
         """
-        Seting the thickness
-        @return:
+        Setting the thickness
         """
         return self.__thickness
 
@@ -66,14 +66,14 @@ class recursive_AMR:
     def set_thickness_diff(self, min_val):
         if min_val <= 0:
             raise ValueError(
-                "Input of thickness difference must be greater than 0")
+                "Input of thickness difference must be greater than 0"
+            )
         else:
             self.__thickness = min_val
 
     def thickness_diff(self):
         """
         Marks all elements whose thickness difference is in a sepcific range.
-        @return:
         """
         thickness_diff = self.thickness_diff_calc()
         arg_list = np.where(
@@ -88,8 +88,9 @@ class recursive_AMR:
 
     def nodes_array(self, ele):
         """
-        Returns a list and an array of nodes which are marked
-        @return: lost of nodes, array of nodes
+        Returns an array of nodes which are marked.
+
+        @return: nodes_array
         """
 
         nodes = self.ele_undeformed[:, 0:3]
@@ -102,6 +103,7 @@ class recursive_AMR:
     def get_all_edges(nodes_array):
         """
         Create a ndarray with three edge tuple.
+
         @param nodes_array:
         @return: edges
         """
@@ -116,9 +118,10 @@ class recursive_AMR:
     @staticmethod
     def create_stacked_edges_array(edges):
         """
-        Create a stacked array with corresponding element numbers
+        Create a stacked array with corresponding element numbers.
+
         @param edges:
-        @return:
+        @return: all_neighbor
         """
 
         all_neighbor = np.stack(
@@ -130,11 +133,12 @@ class recursive_AMR:
 
     def get_ele_length(self, marked_ele):
         """
-        This function calls all function to calculate the longest edge and check where it is.
+        This function calls all function to calculate the longest edge and checks where it is.
+
         @return:nodes_where_longest
         """
         nodes_mesh = self.neighbor_coordinates(marked_ele)
-        longest_edge = recursive_AMR.ele_edge_length(nodes_mesh)
+        longest_edge = AMR.ele_edge_length(nodes_mesh)
         nodes_where_longest = self.find_longest_edge(longest_edge)
 
         return nodes_where_longest
@@ -142,20 +146,28 @@ class recursive_AMR:
     def neighbor_coordinates(self, marked_ele):
         """
         Get all the coordinates of the nodes and split the array in a stack of 3 lists.
-        @param all_ele:
-        @return:
+
+        @param marked_ele:
+        @return: nodes_mesh
         """
 
-        neighbor_nodes = self.ele_undeformed[marked_ele, 0:3].astype(
-            np.int)
+        neighbor_nodes = self.ele_undeformed[
+                         marked_ele, 0:3
+                         ].astype(np.int)
+
         for idx, add in enumerate(neighbor_nodes):
-            neighbor_nodes[idx] = np.array(list(map(lambda x: x - 1, add)))
+            neighbor_nodes[idx] = np.array(
+                list(map(lambda x: x - 1, add))
+            )
         mesh = self.mesh_undeformed[:, 0:3]
         nodes_mesh = []
+
         for nodes in neighbor_nodes:
-            nodes_mesh.append([mesh[nodes[0], 0:3],
-                               mesh[nodes[1], 0:3],
-                               mesh[nodes[2], 0:3]])
+            nodes_mesh.append(
+                [mesh[nodes[0], 0:3],
+                 mesh[nodes[1], 0:3],
+                 mesh[nodes[2], 0:3]]
+            )
 
         nodes_mesh = np.asarray(nodes_mesh)
         nodes_mesh = np.split(nodes_mesh, 3, axis=1)
@@ -168,9 +180,10 @@ class recursive_AMR:
     @staticmethod
     def ele_edge_length(nodes_mesh):
         """
-        Calculating the maximum side length of the elements which are next to a marked element. The euclidian norm is
-        used to perform this operation. Afterwards the maximum side length with the corresponding index are calculated.
-        It's possible to determine the longest side by comparing the index with the calculation of the euclidian norm.
+        Calculating the maximum side length of an element. The euclidian norm is used to perform this operation.
+        Afterwards the maximum side length with the corresponding index are calculated. It's possible to determine
+        the longest side by comparing the index with the calculation of the euclidian norm.
+
         @param nodes_mesh:
         @return: longest_edge
         """
@@ -182,82 +195,101 @@ class recursive_AMR:
         euc_dist[2] = np.linalg.norm((nodes_mesh[1] - nodes_mesh[2]), axis=1)
 
         euc_dist = np.c_[euc_dist[0], euc_dist[1], euc_dist[2]]
-        longest_edge = [
-            np.argmax(
-                euc_dist[i],
-                axis=0) for i in range(
-                len(euc_dist))]
+
+        longest_edge = []
+        for edges in euc_dist:
+            longest_edge.append(
+                np.argmax(edges, axis=0)
+            )
+        longest_edge = [np.argmax(euc_dist[i], axis=0) for i in range(len(euc_dist))]
 
         return longest_edge
 
     def find_longest_edge(self, longest_edge):
         """
         This function checks if the longest edge is along the marked neighbors edge or not.
+
         @param longest_edge:
         @return: nodes_where_longest
         """
 
         nodes = self.ele_undeformed[:, 0:3]
         nodes_where_longest = []
-        for le in zip(nodes, longest_edge):
+        for n, le in zip(nodes, longest_edge):
             try:
-                if le[1] == 0:
-                    nodes_where_longest.append(le[0][[0, 1]])
-                if le[1] == 1:
-                    nodes_where_longest.append(le[0][[0, 2]])
-                if le[1] == 2:
-                    nodes_where_longest.append(le[0][[1, 2]])
+                if le == 0:
+                    nodes_where_longest.append(n[[0, 1]])
+                if le == 1:
+                    nodes_where_longest.append(n[[0, 2]])
+                if le == 2:
+                    nodes_where_longest.append(n[[1, 2]])
 
-            except BaseException:
-                raise ValueError(
-                    "Something went wrong while checking for the longest edge...")
+            except ValueError:
+                raise "Something went wrong while checking for the longest edge..."
+
         nodes_where_longest = np.asarray(nodes_where_longest)
         return nodes_where_longest
 
     @staticmethod
-    def neighbor_intersection(row, ele_mesh):
+    def neighbor_intersection(row, check_nodes):
         """
         Creates 3 different tuples based on the first and second node, the first and last node and the second and last
         node. The np.isin function checks whether the tuple nodes are somewhere in the check_nodes. If so, they occur
-        two times in the match collection. There are 3 different lists of results, which are stored in the match collection
-        (Three different results for three different edges).
+        two times in the match collection. There are 3 different lists of results, which are stored in the match
+        collection (three different results for three different edges).
         A list comprehension determines if a number occurs more than 1 time. If so, this number is the direct neighbor
         bacause it shares one edge with one of the tuples.
+
         @param row:
-        @param ele_mesh:
-        @return:
+        @param check_nodes:
+        @return: all_neighbor
         """
-        check_nodes = np.array(ele_mesh)
-        templates = [tuple(row[[0, 1]]), tuple(
-            row[[0, 2]]), tuple(row[[1, 2]])]
+
+        templates = [tuple(row[[0, 1]]),
+                     tuple(row[[0, 2]]),
+                     tuple(row[[1, 2]])
+                     ]
+
         match_collection = []
         for idx, tuple_ele in enumerate(templates):
-            match_collection.append(np.where(
-                np.isin(check_nodes, tuple_ele)))
+            match_collection.append(
+                np.where(
+                    np.isin(
+                        check_nodes, tuple_ele
+                    )
+                )
+            )
+
         all_neighbor = []
         for match in match_collection:
             match = match[0].tolist()
             all_neighbor.append(
-                list(set([x for x in match if match.count(x) > 1])))
+                list(
+                    set([x for x in match if match.count(x) > 1])
+                )
+            )
 
         return all_neighbor
 
     @staticmethod
     def swap_neighbor(all_neighbor):
         """
-        Swap the axes, that the neighbor is in column 1 and the marked element in column 0
+        Swap the axes, that the neighbor is in column 1 and the marked element in column 0.
+
         @param all_neighbor:
-        @return:
+        @return: all_neighbor
         """
         find_marked_ele = np.concatenate(all_neighbor).copy().tolist()
         sort = list(
-            set([i for i in find_marked_ele if find_marked_ele.count(i) == 3]))
+            set([i for i in find_marked_ele if find_marked_ele.count(i) == 3])
+        )
         # indices = []
         indices = np.where(all_neighbor == sort)
         # for enum, neighbor in enumerate(all_neighbor):
         #    if neighbor == sort:
         #        indices.append(enum)
         col_index = indices[1]
+
         for swap in range(3):
             if col_index[swap] == 1:
                 all_neighbor[swap, [0, 1]] = all_neighbor[swap, [1, 0]]
@@ -267,22 +299,45 @@ class recursive_AMR:
     def all_marked_elements(self):
         """
         Concatenate all marked elements.
-        @return:
         """
-        if self.for_blue_ref_one_neighbor and self.for_blue_ref_two_neighbor and self.for_green_ref:
-            self.all_ele = self.for_blue_ref_one_neighbor + \
-                           self.for_blue_ref_two_neighbor + \
-                           self.for_red_ref + \
-                           self.for_green_ref
+        if self.for_blue_ref_one_neighbor:
+            if self.for_blue_ref_two_neighbor:
+                if self.for_green_ref:
 
-            self.all_ele = np.asarray(
-                self.all_ele).reshape(len(self.all_ele), 1)
+                    self.all_ele = self.for_blue_ref_one_neighbor + \
+                                   self.for_blue_ref_two_neighbor + \
+                                   self.for_red_ref + \
+                                   self.for_green_ref
+
         else:
             self.all_ele = self.for_red_ref
-            self.all_ele = np.asarray(
-                self.all_ele).reshape(len(self.all_ele), 1)
+
+        self.all_ele = np.asarray(
+            self.all_ele
+        ).reshape(-1, 1)
 
     def count_occurence(self, marked_edges, all_edges, nodes_where_longest):
+        """
+        This is the main function for determining the elements which have to be refined. The algorithm needs the
+        marked elements from the class xxxx and their corresponding edges. These edges are hanging edges, because
+        they all have middle nodes which can have hanging nodes. In the first iteration we check, if unmarked
+        elementes are adjacent to marked elements. If so, we mark all adjacent edges to marked elements.
+        There are 5 possible outcomes:
+
+        1. 3 edges are marked -> Red element
+        2. 2 edges are marked and one edge is along the longest edge of the element -> Blue element
+        3. 2 edges are marked and no edge is along the longest edge of the element -> Red element
+        4. 1 edge is marked which is the longest edge of the element -> Green element
+        5. 1 edge is marked which is not the longest edge of the element -> Blue element
+
+        Option 3 and 5 create new hanging nodes which have to be eliminated before ending the algorithm.
+        There are no more refinements if an element is a green marked element.
+
+        @param marked_edges:
+        @param all_edges:
+        @param nodes_where_longest:
+        @return:
+        """
 
         marked_edge = []
 
@@ -311,7 +366,6 @@ class recursive_AMR:
             longest_edges_red = []
             longest_edges_blue = []
             new_marked_ele = []
-            red_idx_to_delete = []
             idx_to_delete = []
             for idx, check_edges in enumerate(all_edges):
                 counter = 0
@@ -401,15 +455,19 @@ class recursive_AMR:
             print('new blue', len(blue))
 
             if len(new_marked_ele) > 0:
+                break
                 all_edges_blue, ele_num_blue, blue_ele = self.neighbors_along_longest_edge(all_edges,
-                                                                                           longest_edges_blue)
+                                                                                           longest_edges_blue
+                                                                                           )
                 all_edges_red, _, _ = self.neighbors_along_longest_edge(all_edges, longest_edges_blue)
                 all_edges = np.append(all_edges_red,
                                       all_edges_blue,
-                                      axis=0)
+                                      axis=0
+                                      )
                 hanging_edges = np.append(hanging_edges,
                                           longest_edges_red + longest_edges_blue,
-                                          axis=0)
+                                          axis=0
+                                          )
                 marked_ele = np.append(marked_ele, new_marked_ele)
 
                 for ele, blue_ele in zip(ele_num_blue, blue_ele):
@@ -449,7 +507,8 @@ class recursive_AMR:
                 )[0]
                 self.for_blue_ref_two_neighbor.append(val[0])
                 self.two_blue_marked_neighbor.append([self.for_blue_ref_one_neighbor[val[1]],
-                                                      self.green_marked_neighbor[indice[0]]])
+                                                      self.green_marked_neighbor[indice[0]]]
+                                                     )
 
                 del self.for_green_ref[indice[0]]
                 del self.green_marked_neighbor[indice[0]]
@@ -461,7 +520,7 @@ class recursive_AMR:
         Returns the element along the longest edge of the marked element.
         @param all_edges:
         @param longest_edges:
-        @return:
+        @return: stackes_neighbor, ele_num, blue_ele
         """
         ele_num = []
         blue_ele = []
@@ -479,22 +538,35 @@ class recursive_AMR:
                             blue_ele.append(index)
 
         longest_edge_neighbor_edge = self.nodes_array(ele_num)
-        get_edges = recursive_AMR.get_all_edges(longest_edge_neighbor_edge)
-        stacked_neighbor = recursive_AMR.create_stacked_edges_array(get_edges)
+        get_edges = AMR.get_all_edges(longest_edge_neighbor_edge)
+        stacked_neighbor = AMR.create_stacked_edges_array(get_edges)
 
         return stacked_neighbor, ele_num, blue_ele
 
     def get_second_blue_element_neighbor(self, marked_ele, ele_num, idx, check):
-        temp_blue_neighbor = []
+        """
+        If an element is blue marked and has two neighbors we need the element numbers of both neighbors
+        for further operations. Therefore we get the index of the match of the unmarked edge and the marked
+        edge. The marked_ele contains all marked elements and is the same shape as the check variable used in
+        the count_occurence function. Therefore we can directly but the index into the marked_ele function
+        and get both neighbors.
+
+        @param marked_ele:
+        @param ele_num:
+        @param idx:
+        @param check:
+        @return:
+        """
+
+        # Append the marked element number to the instance variable "self.for_blue_ref_two_neighbor"
         self.for_blue_ref_two_neighbor.append(ele_num[idx])
+
+        temp_blue_neighbor = []
+
         for find_match in check:
             true_indice = np.where(find_match)[0]
 
-            if len(true_indice) > 1:
-                temp_blue_neighbor.append(
-                    marked_ele[true_indice[0]]
-                )
-            elif true_indice or true_indice == 0:
+            if true_indice in (None, True) or len(true_indice):
                 temp_blue_neighbor.append(
                     marked_ele[true_indice[0]]
                 )
@@ -505,7 +577,7 @@ class recursive_AMR:
 
     def get_edges_along_blue_elements(self):
         """
-        Get all edges along the marked already marked elements of a blue element with two neighbor
+        Get all edges along the already marked elements of a blue element with two neighbors.
         """
 
         self.two_blue_marked_neighbor = np.asarray(self.two_blue_marked_neighbor)
@@ -519,50 +591,68 @@ class recursive_AMR:
             self.for_blue_ref_two_neighbor
         )
 
-        for first_neighbor, second_neighbor, marked_ele, in zip(first_neighbor,
-                                                                second_neighbor,
-                                                                marked_ele,
-                                                                ):
+        for fn, sn, me, in zip(first_neighbor,
+                               second_neighbor,
+                               marked_ele,
+                               ):
             self.nodes_along_second_neighbor.append(
-                np.intersect1d(first_neighbor, marked_ele)
+                np.intersect1d(fn, me)
             )
             self.nodes_along_second_neighbor.append(
-                np.intersect1d(second_neighbor, marked_ele)
+                np.intersect1d(sn, me)
             )
+
         self.two_blue_marked_neighbor = self.two_blue_marked_neighbor.tolist()
 
     def mid_nodes(self, ele):
         """
         Calculation of all mid nodes. Afterwards a template will be created with new mid node numbers and their
         corresponding coordinates.
-
-        @return:
+        @param ele:
+        @return: mid_node_coor
         """
+
         red_coors = self.neighbor_coordinates(ele)
-        mid_node_1 = np.divide(
-            (np.add(red_coors[0], red_coors[1])), 2).round(decimals=6)
-        mid_node_2 = np.divide(
-            (np.add(red_coors[1], red_coors[2])), 2).round(decimals=6)
-        mid_node_3 = np.divide(
-            (np.add(red_coors[2], red_coors[0])), 2).round(decimals=6)
+        mid_node = [np.array([]), np.array([]), np.array([])]
 
-        split_size = len(mid_node_1)
-        mid_node_1 = np.split(np.concatenate(mid_node_1), split_size)
-        mid_node_2 = np.split(np.concatenate(mid_node_2), split_size)
-        mid_node_3 = np.split(np.concatenate(mid_node_3), split_size)
+        mid_node[0] = np.divide(
+            (np.add(red_coors[0], red_coors[1])),
+            2
+        ).round(decimals=6)
 
-        mid_node_coor = np.hstack(
-            (mid_node_1, mid_node_2, mid_node_3)).reshape(
-            len(mid_node_1) * 3, 3)
+        mid_node[1] = np.divide(
+            (np.add(red_coors[1], red_coors[2])),
+            2
+        ).round(decimals=6)
 
-        # unique_mesh, idx = np.unique(mid_node_coor, axis=0, return_index=True)
-        node_axis = np.arange(len(self.mesh_undeformed) + 1, len(
-            self.mesh_undeformed) + len(mid_node_coor) + 1).astype(np.int)
+        mid_node[2] = np.divide(
+            (np.add(red_coors[2], red_coors[0])),
+            2
+        ).round(decimals=6)
+
+        for col in range(3):
+            mid_node[col] = np.split(
+                np.concatenate(mid_node[col]), len(mid_node[col])
+            )
+
+        mid_node_coor = np.stack(
+            (mid_node[0], mid_node[1], mid_node[2])
+        ).reshape(
+            len(mid_node[0]) * 3, 3
+        )
+
+        unique_mesh, idx = np.unique(mid_node_coor, axis=0, return_index=True)
+        node_axis = np.arange(
+            len(self.mesh_undeformed) + 1,
+            len(self.mesh_undeformed) +
+            len(unique_mesh) + 1
+        ).astype(np.int)
 
         # Keeping the ordner because np.unique sorts by size (Not necessary but
         # keeps the chronologically order)
-        # bcs_mesh = unique_mesh[np.argsort(idx)]
-        self.bcs_mesh = np.hstack((node_axis[:, np.newaxis], mid_node_coor))
+        bcs_mesh = unique_mesh[np.argsort(idx)]
+        self.bcs_mesh = np.hstack((node_axis[:, np.newaxis],  bcs_mesh))
+
         return mid_node_coor
 
     def find_matching_mid_node(self, mid_nodes_coors, shape):
@@ -588,9 +678,10 @@ class recursive_AMR:
         no_match = []
         for idx, coors in enumerate(mid_nodes_coors):
             matching_c = np.where(
-                (self.bcs_mesh[:, 1:4] == coors).all(axis=1))[0]
-            if len(matching_c) > 0:
+                (self.bcs_mesh[:, 1:4] == coors).all(axis=1)
+            )[0]
 
+            if len(matching_c) > 0:
                 idx_cluster.append(matching_c[0])
             elif matching_c or matching_c == 0:
                 idx_cluster.append(matching_c)
@@ -598,20 +689,23 @@ class recursive_AMR:
                 no_match.append(idx)
         if shape:
             if np.mod(len(idx_cluster), shape) == 0:
-                mid_nodes = np.asarray([self.bcs_mesh[idx, 0].astype(
-                    np.int) for idx in idx_cluster]).reshape(-1, shape)
-                # int(len(idx_cluster) / shape)
+                mid_nodes = np.asarray(
+                    [self.bcs_mesh[idx, 0].astype(np.int) for idx in idx_cluster]
+                ).reshape(-1, shape)
             else:
                 raise ValueError(
-                    "Somenthing went wrong while trying to find the mid nodes for the refinement")
+                    "Something went wrong while trying to find the mid nodes for the refinement"
+                )
         else:
-            mid_nodes = np.asarray([self.bcs_mesh[idx, 0].astype(np.int)
-                                    for idx in idx_cluster if idx or idx == 0])
+            mid_nodes = np.asarray(
+                [self.bcs_mesh[idx, 0].astype(np.int) for idx in idx_cluster if idx or idx == 0]
+            )
+
         return mid_nodes, no_match
 
     def matching_mid_nodes(self, edge_match, nodes_where_longest):
         """
-        This function calculates the mid node coordinate at the edges where the longest edge is.
+        This function returns the mid node coordinate at the edges where the longest edge is.
         @param: edge_match
         @param: nodes_where_longest
         @return: mid_node
@@ -623,6 +717,13 @@ class recursive_AMR:
         return mid_node
 
     def calculate_mid_node(self, match, container_len):
+        """
+        This function calculates the mid node coordinate at the edges where the longest edge is.
+
+        @param match:
+        @param container_len:
+        @return: mid_node
+        """
 
         c_container = [np.array(np.empty((container_len, 3))),
                        np.array(np.empty((container_len, 3)))]
@@ -631,23 +732,28 @@ class recursive_AMR:
 
         for i in range(2):
             for idx, nodes in enumerate(match):
-                c_container[i][idx] = self.mesh_undeformed[nodes[i].astype(
-                    np.int), 0:3]
+                c_container[i][idx] = self.mesh_undeformed[
+                                      nodes[i].astype(np.int), 0:3
+                                      ]
 
         mid_node = np.divide(
-            (np.add(c_container[0], c_container[1])), 2).round(decimals=6)
+            (np.add(c_container[0], c_container[1])),
+            2
+        ).round(decimals=6)
+
         return mid_node
 
-    def search_matching_mid_nodes(
-            self, longest_edge_nodes, nodes_where_longest):
+    @staticmethod
+    def search_matching_mid_nodes(longest_edge_nodes, nodes_where_longest):
         """
         @param: longest_edge_nodes
         @param: nodes_where_longest
         @return: edge_match
         """
 
-        new_nodes = recursive_AMR.neighbor_intersection(
-            longest_edge_nodes, nodes_where_longest)
+        new_nodes = AMR.neighbor_intersection(
+            longest_edge_nodes, nodes_where_longest
+        )
         for idx, result in enumerate(new_nodes):
             if len(result) == 2:
                 return new_nodes[idx][0]
@@ -658,10 +764,23 @@ class recursive_AMR:
     def keep_rotation_direction(nodes_neighbor, nodes, nodes_where_longest, ele):
         """
         Neighboring nodes change their order to keep the rotation direction. Therefore it's very important
-        to place the nodes at the right position, because they differ depending on the neighbor node position
+        to place the nodes at the right position, because they differ depending on the neighbor node position.
+
+        1. Get the index of the intersection between the nodes neighbors (which are the nodes of a marked elements
+           neighbors) and nodes (which are the nodes of the newly marked element f.e. a green element).
+        2. There is always one node in the nodes variable which has no intersection, because there's only an
+           intersection between an adjacent edge. This node is the "node to keep" because it's the vertex node
+           opposite of the marked edge.
+        3. Get the correct nodes rotation by calling the function nodes_rotation. Follow the docstrings of
+           nodes_rotation for more insights.
+        4. Only for blue elements with one neighbor: The vertex node is the node which is on the opposite of
+           edge, where the adjacent marked element is.
+
         @param nodes_neighbor:
         @param nodes:
-        @return:
+        @param nodes_where_longest:
+        @param ele:
+        @return: keep_node, index, keep_node_index, node_to_close_element, node_rotation
         """
 
         idx1 = []
@@ -671,9 +790,15 @@ class recursive_AMR:
         nodes = np.asarray(nodes)
         for index, row in enumerate(zip(nodes_neighbor, nodes)):
             intersection, _, indices = np.intersect1d(
-                row[0], row[1], return_indices=True)
-            idx1.append(np.where(row[0] == intersection[0]))
-            idx2.append(np.where(row[0] == intersection[1]))
+                row[0], row[1], return_indices=True
+            )
+
+            idx1.append(np.where(
+                row[0] == intersection[0])
+            )
+            idx2.append(np.where(
+                row[0] == intersection[1])
+            )
 
             keep_node.append(
                 np.setxor1d(intersection, row[1])[0]
@@ -681,29 +806,32 @@ class recursive_AMR:
 
             keep_node_index.append(
                 np.where(
-                    keep_node[index] == row[1])[0][0].astype(np.int)
+                    keep_node[index] == row[1]
+                )[0][0].astype(np.int)
             )
 
         index = np.concatenate(
             np.c_[idx1, idx2]
         )
-        nodes = np.array(nodes)
 
-        node_rotation = recursive_AMR.nodes_rotation(keep_node_index, nodes)
+        # Get the nodes rotation by calling the function nodes_roation
+        node_rotation = AMR.nodes_rotation(keep_node_index, nodes)
 
-        node_to_close_element = []
+        vertex_node = []
         le = [nodes_where_longest[idx] for idx in ele]
         for idx, elements in enumerate(le):
-            node_to_close_element.append(
+            vertex_node.append(
                 int(np.setxor1d(elements, nodes[idx])[0])
             )
 
-        return keep_node, index, keep_node_index, node_to_close_element, node_rotation
+        return keep_node, index, keep_node_index, vertex_node, node_rotation
 
     @staticmethod
     def nodes_rotation(keep_node_index, nodes):
         """
-        Check the nodes rotation
+        Right-hand side rule for shell elements is responsible for the nodes rotation. If we know the index
+        of the node to keep and the original order of the elements node, we know how the nodes rotation is.
+
         @param keep_node_index:
         @param nodes:
         return: node_rotation
@@ -713,102 +841,101 @@ class recursive_AMR:
         for idx, row in enumerate(keep_node_index):
             if row == 1:
                 node_rotation.append(
-                    np.array((nodes[idx, 2], nodes[idx, 0]))
+                    np.array(
+                        (nodes[idx, 2], nodes[idx, 0])
+                    )
                 )
             elif row == 2:
                 node_rotation.append(
-                    np.array((nodes[idx, 0], nodes[idx, 1]))
+                    np.array(
+                        (nodes[idx, 0], nodes[idx, 1])
+                    )
                 )
             else:
                 node_rotation.append(
-                    np.array((nodes[idx, 1], nodes[idx, 2]))
+                    np.array(
+                        (nodes[idx, 1], nodes[idx, 2])
+                    )
                 )
+
         return node_rotation
 
-    def search_mid_point(self, longest_edge, nodes, shape):
-        """
-
-        @param longest_edge:
-        @param nodes:
-        @param shape:
-        @return:
-        """
-
-        edge_match = []
-        for gp in nodes:
-            edge_match.append(
-                self.search_matching_mid_nodes(gp, longest_edge)
-            )
-
-        mid_node_c = self.matching_mid_nodes(edge_match, longest_edge)
-        mid_node, no_match = self.find_matching_mid_node(mid_node_c, shape)
-
-        return mid_node, no_match, edge_match
-
-    def find_vertex_and_mid_node(self, nodes,
+    def find_vertex_and_mid_node(self,
+                                 nodes,
                                  neighbor_one,
                                  neighbor_two,
                                  two_neighbor,
-                                 mid_node_with_le):
+                                 mid_node_with_le
+                                 ):
         """
         Find the node that closes the element and the corresponding vertex node. This is important because
-        otherwise it's unclear which mid node should be used to create the blue element with two neighbots.
+        otherwise it's unclear which mid node should be used to create the blue element with two neighbors.
+        This function extends the nodes_rotation and keep_rotation_direction function because we need to keep
+        two neighboring elements into account.
+
+        1.Get the nodes which are NOT along one of the marked neighbors of the blue element.
+        2.Get the node which connects the edges which are along the marked neighbors. This node is the vertex
+          node of the opposite side if the edge in 1.
+        3.Get the nodes rotation with the connecting node
+        4.Check whether the unmarked edge intersects with the node which is in the longest edge and get
+        the nodes which bisect both edges where the neighbors are. One of them is the vertex node of the connecting
+        node and the other one is the bisecting node of the second eedge where a neighbor is.
+
         @param nodes:
         @param neighbor_one:
         @param neighbor_two:
         @param two_neighbor:
         @param mid_node_with_le:
-        @return: unmarked_edge, node_to_close, vertex_node
+        @return: rotation_direction, node_to_close, vertex_node
         """
 
-        node_rotation = []
-        keep_node = []
-        keep_node_index = []
-        node_to_close = []
-        vertex_node = []
-
+        unmarked_edge = []
+        connecting_node = []
+        connecting_node_index = []
         for row in range(len(nodes)):
-            node_rotation.append(np.setxor1d(
+            unmarked_edge.append(np.setxor1d(
                 neighbor_one[row], neighbor_two[row]
             ).astype(np.int)
                                  )
 
-            keep_node.append(
+            connecting_node.append(
                 np.setxor1d(
-                    node_rotation[row], nodes[row]
+                    unmarked_edge[row], nodes[row]
                 )[0]
             )
 
-            keep_node_index.append(
+            connecting_node_index.append(
                 np.where(
-                    keep_node[row] == nodes[row]
+                    connecting_node[row] == nodes[row]
                 )[0][0]
 
             )
 
-        unmarked_edge = self.nodes_rotation(keep_node_index, nodes)
+        rotation_direction = self.nodes_rotation(connecting_node_index, nodes)
 
-        for edge in range(len(keep_node_index)):
+        bisect_node = []
+        vertex_node = []
+        for edge in range(len(connecting_node_index)):
             longest_edge_to_node = np.intersect1d(
-                unmarked_edge[edge][0], mid_node_with_le[1][edge]
+                rotation_direction[edge][0], mid_node_with_le[1][edge]
             )
 
             if longest_edge_to_node:
-                node_to_close.append(
+                bisect_node.append(
                     two_neighbor[edge][0]
                 )
                 vertex_node.append(
                     two_neighbor[edge][1]
                 )
             else:
-                node_to_close.append(
+                bisect_node.append(
                     two_neighbor[edge][1]
                 )
                 vertex_node.append(
                     two_neighbor[edge][0]
                 )
 
-        return unmarked_edge, node_to_close, vertex_node, keep_node
+        return rotation_direction, bisect_node, vertex_node, connecting_node
 
     def red_pattern(self, mid_nodes_coor, ele):
         """
@@ -821,22 +948,23 @@ class recursive_AMR:
         because the middle nodes of green and blue elements are connecting middle nodes of other elements
 
 
-        @param new_nodes:
+        @param ele:
         @param mid_nodes_coor:
         @return:
         """
 
         mid_nodes, no_match = self.find_matching_mid_node(
-            mid_nodes_coor, shape=3)
+            mid_nodes_coor, shape=3
+        )
 
         neighbors = []
         nodes_ele = self.nodes_array(ele)
         for i, row in enumerate(nodes_ele):
-            if i == 4004:
-                pass
-            all_neighbor = np.asarray(recursive_AMR.neighbor_intersection(
-                row, self.ele_undeformed[:, 0:3]))
-            neighbor = recursive_AMR.swap_neighbor(all_neighbor)
+            all_neighbor = np.asarray(AMR.neighbor_intersection(
+                row, self.ele_undeformed[:, 0:3]
+            )
+            )
+            neighbor = AMR.swap_neighbor(all_neighbor)
             neighbors.append(neighbor[0])
 
         neighbors = np.asarray(neighbors)
@@ -846,19 +974,25 @@ class recursive_AMR:
 
         for count, row_nodes in enumerate(zip(nodes_neighbor,
                                               mid_nodes,
-                                              nodes)):
+                                              nodes
+                                              )
+                                          ):
             self.red_ele.append(np.array(
                 (row_nodes[1][0], row_nodes[1][1], row_nodes[1][2])
-            ))
+            )
+            )
             self.red_ele.append(np.array(
                 (row_nodes[2][2], row_nodes[1][2], row_nodes[1][1])
-            ))
+            )
+            )
             self.red_ele.append(np.array(
                 (row_nodes[1][2], row_nodes[2][0], row_nodes[1][0])
-            ))
+            )
+            )
             self.red_ele.append(np.array(
                 (row_nodes[1][0], row_nodes[2][1], row_nodes[1][1])
-            ))
+            )
+            )
 
         #              x3
         #            /  |  \
@@ -893,12 +1027,14 @@ class recursive_AMR:
         res = [nodes_where_longest[index] for index in self.for_green_ref]
         mid_node_le = self.calculate_mid_node(res, len(res))
         mid_node, no_match = self.find_matching_mid_node(mid_node_le,
-                                                         shape=None)
+                                                         shape=None
+                                                         )
 
         nodes = list(nodes)
         nodes_neighbor = self.nodes_array(self.green_marked_neighbor)
-        keep_node, index, _, _, nodes_longest_edge = self.keep_rotation_direction(
-            nodes_neighbor, nodes, nodes_where_longest, ele)
+        keep_node, index, _, _, nodes_longest_edge = AMR.keep_rotation_direction(
+            nodes_neighbor, nodes, nodes_where_longest, ele
+        )
 
         for count, row_nodes in enumerate(zip(nodes_longest_edge,
                                               mid_node
@@ -906,10 +1042,12 @@ class recursive_AMR:
                                           ):
             self.green_ele.append(np.array(
                 (row_nodes[1], keep_node[count], row_nodes[0][0])
-            ))
+            )
+            )
             self.green_ele.append(np.array(
                 (row_nodes[1], row_nodes[0][1], keep_node[count])
-            ))
+            )
+            )
 
     #              x3
     #            /  |  \
@@ -940,7 +1078,8 @@ class recursive_AMR:
 
         nodes_along_neighbor = []
         for row_blue in zip(self.ele_undeformed[self.blue_marked_neighbor, 0:3],
-                            self.ele_undeformed[ele_one_neighbor, 0:3]):
+                            self.ele_undeformed[ele_one_neighbor, 0:3]
+                            ):
             nodes_along_neighbor.append(
                 np.intersect1d(row_blue[0], row_blue[1])
             )
@@ -953,9 +1092,11 @@ class recursive_AMR:
             )
 
             mid_node_c = self.calculate_mid_node(
-                nodes_along_neighbor, len(nodes_along_neighbor))
+                nodes_along_neighbor, len(nodes_along_neighbor)
+            )
             match_one_nle, no_match = self.find_matching_mid_node(
-                mid_node_c, shape=None)
+                mid_node_c, shape=None
+            )
 
         except ValueError:
             raise "Blue elements can not be assigned"
@@ -970,10 +1111,12 @@ class recursive_AMR:
             one_neighbor,
             ele_one_neighbor,
             self.blue_marked_neighbor,
-            nodes_where_longest)
+            nodes_where_longest
+        )
 
     def blue_pattern_two_neighbor(
-            self, longest_edge, ele_two_neighbor):
+            self, longest_edge, ele_two_neighbor
+    ):
         """
 
         @param longest_edge:
@@ -999,11 +1142,13 @@ class recursive_AMR:
         try:
             mid_node_le = self.calculate_mid_node(res, len(res))
             match_two, no_match_two_le = self.find_matching_mid_node(mid_node_le,
-                                                                     shape=None)
+                                                                     shape=None
+                                                                     )
             mid_node_c = self.calculate_mid_node(nodes_nle, len(nodes_nle))
 
             match_two_nle, no_match_two_nle = self.find_matching_mid_node(mid_node_c,
-                                                                          shape=None)
+                                                                          shape=None
+                                                                          )
         except ValueError:
             raise "Blue elements can not be assigned"
 
@@ -1016,7 +1161,8 @@ class recursive_AMR:
         self.create_blue_pattern_two_neighbor(two_neighbor,
                                               ele_two_neighbor,
                                               self.nodes_along_second_neighbor,
-                                              mid_node_with_le)
+                                              mid_node_with_le
+                                              )
 
     def create_blue_pattern_one_neighbor(self, one_neighbor, ele, neighbor, nodes_where_longest):
         """
@@ -1027,12 +1173,15 @@ class recursive_AMR:
         """
         nodes = self.nodes_array(ele)
         nodes_neighbor = self.nodes_array(neighbor)
-        keep_node, index, keep_node_index, node_to_close_element, node_rotation = self.keep_rotation_direction(
-            nodes_neighbor, nodes, nodes_where_longest, ele)
+        keep_node, index, keep_node_index, node_to_close_element, node_rotation = AMR.keep_rotation_direction(
+            nodes_neighbor, nodes, nodes_where_longest, ele
+        )
         keep_node = keep_node
         node_to_close_element = node_to_close_element
         for count, row_nodes in enumerate(zip(node_rotation,
-                                              one_neighbor)):
+                                              one_neighbor
+                                              )
+                                          ):
             if node_to_close_element[count] == row_nodes[0][0]:
                 self.blue_ele.append(
                     np.array(
@@ -1060,7 +1209,8 @@ class recursive_AMR:
                                          two_neighbor,
                                          ele,
                                          nodes_along_second_neighbor,
-                                         mid_node_with_le):
+                                         mid_node_with_le
+                                         ):
 
         """
         This function creates the blue pattern for elements which have one or two neighbors.
@@ -1079,7 +1229,8 @@ class recursive_AMR:
                                                                                              neighbor_one,
                                                                                              neighbor_two,
                                                                                              two_neighbor,
-                                                                                             mid_node_with_le)
+                                                                                             mid_node_with_le
+                                                                                             )
 
         for count, (node_to_close, vertex_node) in enumerate(zip(node_to_close, vertex_node)):
             self.blue_ele.append(
@@ -1098,7 +1249,7 @@ class recursive_AMR:
                 )
             )
 
-    def main_recursive_amr(self):
+    def main_AMR(self):
         self.thickness_diff()
         all_ele = np.arange(0, len(self.ele_undeformed))
         nodes_array = self.nodes_array(self.marked_ele)
@@ -1110,7 +1261,9 @@ class recursive_AMR:
         self.red_pattern(mid_node_coors, self.for_red_ref)
         self.green_pattern(nodes_where_longest, self.for_green_ref)
         self.blue_pattern_one_neighbor(
-            nodes_where_longest, self.for_blue_ref_one_neighbor, nodes_where_longest)
+            nodes_where_longest, self.for_blue_ref_one_neighbor, nodes_where_longest
+        )
 
         self.blue_pattern_two_neighbor(
-            nodes_where_longest, self.for_blue_ref_two_neighbor)
+            nodes_where_longest, self.for_blue_ref_two_neighbor
+        )
