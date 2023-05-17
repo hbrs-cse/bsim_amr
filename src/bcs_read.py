@@ -10,28 +10,20 @@ import os.path
 import glob
 import numpy as np
 import pandas as pd
+from bsim_amr import BSimAmr
+from config import config_file
 
 
-class bcs_data:
-    """
-    The following source code is represented in an OOP-format for an easier way of handling the instances.
-    First of all a path variable gets assigned which includes the absolute path to the .bcs-files. These
-    were created by B-SIM and include informations about the nodes, element thickness and temperature
-    of the pre
-    """
+class bcs_read(BSimAmr):
+    def __init__(self, path, out_path, thickness):
+        super().__init__(path, out_path, thickness)
 
-    def __init__(self):
-        self.bc = None
         self.line = None
         self.path_lib = None
         self.path_undef = None
         self.path_def = None
         self.get_latest_deformed = []
         self.get_latest_undeformed = []
-        self.ele_undeformed = []
-        self.ele_deformed = []
-        self.mesh_undeformed = []
-        self.mesh_deformed = []
         self.__check_out_path = []
 
     @property
@@ -47,8 +39,8 @@ class bcs_data:
         Check if the path Variable is a string. If not print out an error message. Otherwise assign the path
         string to the classes instance bcs_file_name"
 
-        :param path_str:
-        :return:
+        @param path_str:
+        @return:
         """
         if isinstance(path_str, str):
             self.__filepath = path_str
@@ -56,13 +48,13 @@ class bcs_data:
             raise TypeError("Path not defined as a string")
 
     def get_path_undeformed(self):
-        """"
+        """ "
         Here all undeformed .bcs files will be append to the List "get_undeformed_files". The Glob module finds all
         pathnames to files that are inside a given absolute path to a folder. Afterwards it's necessary to determine
         all undeformed .bcs-files from the folder with an if-statement. Only the latest folders entry will be picked
         because of th os.path.getctime function. Therefore the user is able to reduce possible errors caused by
         selecting the wrong input data for the adaptive mesh refinement. If the .bcs-files list is empty an error
-         message appears.
+        message appears.
         """
         get_undeformed_files = glob.glob(self.filepath)
         list_bcs_undeformed = []
@@ -87,15 +79,15 @@ class bcs_data:
         """
         This function works the same way like the function before. It determines all the deformed .bcs-files in
         the given folders path.
-        :return:
+
         """
+
         get_path_deformed_files = glob.glob(self.filepath)
         list_bcs_deformed = []
         for index in get_path_deformed_files:
             if index.endswith("deformed.bcs"):
                 list_bcs_deformed.append(index)
-                self.get_latest_deformed = max(
-                    list_bcs_deformed, key=os.path.getctime)
+                self.get_latest_deformed = max(list_bcs_deformed, key=os.path.getctime)
                 lines = index.split("\\")
                 self.path_def = os.path.basename(lines[1])
             else:
@@ -114,8 +106,8 @@ class bcs_data:
         files content in a list variable. Therefore it's possible to define exactly the start and end of the information
         that should be stored later in numpy ndarray. All the information stored in the file will be retrieved by
         the numpy function "genfromtxt". There are multiple parameters available to satisfy the users output conditions.
-        :return:
         """
+
         dir_path_und = self.get_latest_undeformed.replace("\\", "/")
         dir_path_def = self.get_latest_deformed.replace("\\", "/")
 
@@ -138,30 +130,22 @@ class bcs_data:
                 delim_whitespace=True,
                 engine="python",
                 skiprows=lambda x: x not in lines_to_keep,
-                names=[
-                    "Node_1",
-                    "Node_20",
-                    "Node_3",
-                    "Thickness",
-                    "Temperature"],
-                usecols=[
-                    1,
-                    2,
-                    3,
-                    4,
-                    5]).to_numpy()
+                names=["Node_1", "Node_2", "Node_3", "Thickness", "Temperature"],
+                usecols=[1, 2, 3, 4, 5],
+            ).to_numpy()
 
-        self.ele_deformed, self.ele_undeformed = ele_data_container[0], ele_data_container[1]
+        self.ele_deformed, self.ele_undeformed = (
+            ele_data_container[0],
+            ele_data_container[1],
+        )
 
     def read_mesh(self):
         """
         This function returns the same dataframe as the function before but the deformed .bcs-file is used.
-        :return:
         """
         mesh_data_container = [np.array([]), np.array([])]
 
         for i in range(len(mesh_data_container)):
-
             start = self.line.index("200.0  Char. dist\n")
             end = self.line.index("-111 1 1 1 1 1 1 END OF COORS\n")
 
@@ -172,21 +156,14 @@ class bcs_data:
                 delim_whitespace=True,
                 engine="python",
                 skiprows=lambda x: x not in lines_to_keep,
-                names=[
-                    "Mesh_x",
-                    "Mesh_y",
-                    "Mesh_z",
-                    "None_1",
-                    "None_2"],
-                usecols=[
-                    1,
-                    2,
-                    3,
-                    4,
-                    5]).to_numpy()
+                names=["Mesh_x", "Mesh_y", "Mesh_z", "None_1", "None_2"],
+                usecols=[1, 2, 3, 4, 5],
+            ).to_numpy()
 
-            self.mesh_deformed, self.mesh_undeformed = mesh_data_container[
-                0], mesh_data_container[1]
+            self.mesh_deformed, self.mesh_undeformed = (
+                mesh_data_container[0],
+                mesh_data_container[1],
+            )
 
     def read_bc(self):
         """
@@ -197,12 +174,13 @@ class bcs_data:
         bc_index = self.line.index("-111 1 1 1 1 1 1 END OF BCs\n")
         bc_begin_index = self.line.index("-111 1 1 1 1 1 1 END OF COORS\n")
 
-        self.bc = pd.read_csv(self.path_lib[0],
-                              sep="\\s+",
-                              engine="python",
-                              skiprows=bc_begin_index + 1,
-                              nrows=bc_index - bc_begin_index - 2
-                              ).to_numpy()
+        self.bc = pd.read_csv(
+            self.path_lib[0],
+            sep="\\s+",
+            engine="python",
+            skiprows=bc_begin_index + 1,
+            nrows=bc_index - bc_begin_index - 2,
+        ).to_numpy()
 
     def run_reading(self):
         """
@@ -213,3 +191,10 @@ class bcs_data:
         self.read_ele()
         self.read_mesh()
         self.read_bc()
+
+if __name__ == '__main__':
+    path, out_path, thickness = config_file()
+    bcs_read = bcs_read(path, out_path, thickness)
+    bcs_read.run_reading()
+
+    print('d')

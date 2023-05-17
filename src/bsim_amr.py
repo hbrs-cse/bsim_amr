@@ -1,23 +1,19 @@
 import os
-from bcs_read import bcs_data
-from amr import AMR
+from refine_ele import AMR
 from bcs_write import write_file
 import cProfile
 import io
 import pstats
 
-path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
-out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out/Vierkant/out"
-thickness = 50
+
 
 
 class BSimAmr:
     def __init__(self, path, out_path, thickness):
-        self.Bcs = bcs_data()
         self.amr = AMR(thickness)
 
-        self._bcs_path_undef = None
-        self._bcs_path_def = None
+        self.bcs_path_undef = None
+        self.bcs_path_def = None
 
         self.ele_data_def = None
         self.ele_data_undef = None
@@ -79,7 +75,7 @@ class BSimAmr:
         self.amr.mesh_deformed = self.mesh_data_def
         self.amr.bc = self.bc
         self.amr.set_thickness_diff
-        self.amr.main_AMR()
+        self.amr.main_amr()
         self.write = write_file(self.amr, out_path)
         self.write.check_out_path
         self.write.check_path()
@@ -92,14 +88,14 @@ class BSimAmr:
         self.bcs_path_undef = path
         self.bcs_path_def = path
         self.read_bcs()
-        # self.run_amr()
         self.run_amr()
+
 
 
 if __name__ == '__main__':
     pr = cProfile.Profile()
     pr.enable()
-    bSimAmr = BSimAmr(path, out_path, thickness)
+    bSimAmr = bcs_read(path, out_path, thickness)
     bSimAmr.main()
     pr.disable()
     s = io.StringIO()

@@ -3,6 +3,10 @@ import os
 
 
 class write_file:
+    """
+    Class for writing .bcs-files
+    """
+
     def __init__(self, obj, out_path):
         self._out_path = out_path
 
@@ -24,6 +28,7 @@ class write_file:
         self.bcs_mesh = obj.bcs_mesh
 
         self.check_out_path = out_path
+        self.file_name = None
 
     @property
     def check_out_path(self):
@@ -81,11 +86,12 @@ class write_file:
         thickness_temp_blue_two = np.repeat(
             blue_elements_two, 3, axis=0
         )
-        thickness_temp_blue = thickness_temp_blue_one.tolist() + \
-                            thickness_temp_blue_two.tolist()
+        thickness_temp_blue = thickness_temp_blue_one.tolist() +\
+                              thickness_temp_blue_two.tolist()
 
         self.green_ele, self.red_ele = np.asarray(
-            self.green_ele), np.asarray(self.red_ele)
+            self.green_ele
+        ), np.asarray(self.red_ele)
 
         complete_red_cluster = np.hstack(
             (self.red_ele, thickness_temp_red)
@@ -99,22 +105,24 @@ class write_file:
 
         self.ele_undeformed = np.delete(self.ele_undeformed,
                                         [self.for_red_ref +
-                                        self.for_green_ref +
-                                        self.for_blue_ref_one_neighbor +
-                                        self.for_blue_ref_two_neighbor
+                                         self.for_green_ref +
+                                         self.for_blue_ref_one_neighbor +
+                                         self.for_blue_ref_two_neighbor
                                          ],
-                                        axis=0)
+                                        axis=0
+                                        )
 
         self.ele_undeformed = np.append(
             self.ele_undeformed,
             np.concatenate(
                 (
-                 complete_red_cluster,
-                 complete_green_cluster,
-                 complete_blue_cluster),
-                axis=0),
-            axis=0)
-
+                    complete_red_cluster,
+                    complete_green_cluster,
+                    complete_blue_cluster),
+                axis=0
+            ),
+            axis=0
+        )
 
     def append_mesh(self):
         """
@@ -123,9 +131,11 @@ class write_file:
         """
 
         complete_mesh_cluster = np.hstack(
-            (self.bcs_mesh[:, 1::], np.zeros((len(self.bcs_mesh), 2), dtype=np.int)))
+            (self.bcs_mesh[:, 1::], np.zeros((len(self.bcs_mesh), 2), dtype=np.int))
+        )
         self.mesh_undeformed = np.append(
-            self.mesh_undeformed, complete_mesh_cluster, axis=0)
+            self.mesh_undeformed, complete_mesh_cluster, axis=0
+        )
 
     def write_file(self):
         """
@@ -148,7 +158,6 @@ class write_file:
             bcs_amf.write(filtering[0])
             bcs_amf.write(filtering[1])
 
-            # print(self.ele_undeformed)
             for ele in range(file_length_ele):
                 bcs_amf.write(
                     "{:5d}{:7d}{:7d}{:7d}{:16.6f}{:16.6f}\n".format(
@@ -181,7 +190,9 @@ class write_file:
             bcs_amf.write(filtering[4])
             for bc in range(file_length_bc):
                 bcs_amf.write("{:5d}{:6d}\n".format(
-                    self.bc[bc, 0].astype(np.int), self.bc[bc, 1].astype(np.int)))
+                    self.bc[bc, 0].astype(np.int), self.bc[bc, 1].astype(np.int)
+                )
+                )
             bcs_amf.write(filtering[4])
 
     def check_success(self):
