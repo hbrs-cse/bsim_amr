@@ -225,7 +225,10 @@ class AMR:
                     nodes_where_longest.append(n[[1, 2]])
 
             except ValueError:
-                raise "Something went wrong while checking for the longest edge..."
+                print(
+                    "Something went wrong while checking for the longest edge..."
+                )
+                raise
 
         nodes_where_longest = np.asarray(nodes_where_longest)
         return nodes_where_longest
@@ -283,11 +286,7 @@ class AMR:
         sort = list(
             set([i for i in find_marked_ele if find_marked_ele.count(i) == 3])
         )
-        # indices = []
         indices = np.where(all_neighbor == sort)
-        # for enum, neighbor in enumerate(all_neighbor):
-        #    if neighbor == sort:
-        #        indices.append(enum)
         col_index = indices[1]
 
         for swap in range(3):
@@ -303,7 +302,6 @@ class AMR:
         if self.for_blue_ref_one_neighbor:
             if self.for_blue_ref_two_neighbor:
                 if self.for_green_ref:
-
                     self.all_ele = self.for_blue_ref_one_neighbor + \
                                    self.for_blue_ref_two_neighbor + \
                                    self.for_red_ref + \
@@ -316,7 +314,7 @@ class AMR:
             self.all_ele
         ).reshape(-1, 1)
 
-    def count_occurence(self, marked_edges, all_edges, nodes_where_longest):
+    def elements_to_refine(self, marked_edges, all_edges, nodes_where_longest):
         """
         This is the main function for determining the elements which have to be refined. The algorithm needs the
         marked elements from the class xxxx and their corresponding edges. These edges are hanging edges, because
@@ -651,7 +649,7 @@ class AMR:
         # Keeping the ordner because np.unique sorts by size (Not necessary but
         # keeps the chronologically order)
         bcs_mesh = unique_mesh[np.argsort(idx)]
-        self.bcs_mesh = np.hstack((node_axis[:, np.newaxis],  bcs_mesh))
+        self.bcs_mesh = np.hstack((node_axis[:, np.newaxis], bcs_mesh))
 
         return mid_node_coor
 
@@ -794,10 +792,12 @@ class AMR:
             )
 
             idx1.append(np.where(
-                row[0] == intersection[0])
+                row[0] == intersection[0]
+            )
             )
             idx2.append(np.where(
-                row[0] == intersection[1])
+                row[0] == intersection[1]
+            )
             )
 
             keep_node.append(
@@ -937,77 +937,112 @@ class AMR:
 
         return rotation_direction, bisect_node, vertex_node, connecting_node
 
+    def mid_node_one_neighbor(self, neighbor, nodes_where_longest, marked_ele):
+        """
+        Get the nodes along the longest edge and the nodes along the marked_neighbor.
+
+        @param neighbor:
+        @param nodes_where_longest:
+        @param marked_ele:
+        @return:
+        """
+
+        longest_edge = [nodes_where_longest[index] for index in neighbor]
+
+        neighbor_ele_edge = self.nodes_array(neighbor)
+        marked_ele_edge = self.nodes_array(marked_ele)
+        nodes_along_neighbor = []
+        for (ne, me) in zip(neighbor_ele_edge, marked_ele_edge):
+            nodes_along_neighbor.append(
+                np.intersect1d(ne, me)
+            )
+
+        return nodes_along_neighbor, longest_edge
+
+    def get_mid_nodes(self, *args, shape):
+        """
+        Call function calculate_mid_node and find_matching_mid_node and return the matching mid nodes.
+
+        *args can hold:
+        1. longest edge
+        2. mid_node_coors
+
+        @param shape:
+        @return:
+        """
+
+        if args[1] is None:
+            mid_node_coors = self.calculate_mid_node(args[0], len(args[0]))
+        else:
+            mid_node_coors = args[1]
+
+        mid_node, no_match = self.find_matching_mid_node(
+            mid_node_coors, shape=shape
+        )
+
+        if no_match:
+            raise ValueError(
+                "Could not reference all marked elements to a corresponding mid node"
+            )
+
+        return mid_node
+
     def red_pattern(self, mid_nodes_coor, ele):
         """
         Creates a pattern for the red refined elements. First of all we use the list of unique elements (bcs_mesh)
-        as a reference, because it includes a fresh generated axis of element numbers (self.new_nodes) and the
-        corresponding coordinates.
-        It is also necessary to implement the new pattern of the element and even more important to keep the correct
-        rotating direction.
-        The pattern can be used for the blue and green refinement. It is not necessary to define new node numbers
-        because the middle nodes of green and blue elements are connecting middle nodes of other elements
-
+        as a reference, because it includes a fresh generated axis of element numbers and the
+        corresponding coordinates. It is not necessary to define new node numbers
+        because the middle nodes of green and blue elements are connecting middle nodes of other elements.
+        It is also necessary to implement the new pattern of the element.
 
         @param ele:
         @param mid_nodes_coor:
         @return:
         """
 
-        mid_nodes, no_match = self.find_matching_mid_node(
-            mid_nodes_coor, shape=3
-        )
+        mid_nodes = self.get_mid_nodes(None, mid_nodes_coor, shape=3)
+        nodes_ele = self.nodes_array(ele)
 
         neighbors = []
-        nodes_ele = self.nodes_array(ele)
         for i, row in enumerate(nodes_ele):
-            all_neighbor = np.asarray(AMR.neighbor_intersection(
+            all_neighbor = AMR.neighbor_intersection(
                 row, self.ele_undeformed[:, 0:3]
             )
-            )
+            all_neighbor = np.asarray(all_neighbor)
             neighbor = AMR.swap_neighbor(all_neighbor)
             neighbors.append(neighbor[0])
 
         neighbors = np.asarray(neighbors)
-        nodes = self.nodes_array(neighbors[:, 0])
-        nodes_neighbor = self.nodes_array(np.asarray(neighbors)[:, 1])
-        # neighbor_nodes_rotation, rotation_index, keep_nodes = self.rotation_direction(nodes_neighbor, nodes)
+        nodes = self.nodes_array(
+            neighbors[:, 0]
+        )
+        nodes_neighbor = self.nodes_array(
+            neighbors[:, 1]
+        )
 
-        for count, row_nodes in enumerate(zip(nodes_neighbor,
-                                              mid_nodes,
-                                              nodes
-                                              )
-                                          ):
-            self.red_ele.append(np.array(
-                (row_nodes[1][0], row_nodes[1][1], row_nodes[1][2])
+        for enum, (nn, mn, row) in \
+                enumerate(zip(nodes_neighbor, mid_nodes, nodes)
+                          ):
+            self.red_ele.append(
+                np.array(
+                    (mn[0], mn[1], mn[2])
+                )
             )
+            self.red_ele.append(
+                np.array(
+                    (row[2], mn[2], mn[1])
+                )
             )
-            self.red_ele.append(np.array(
-                (row_nodes[2][2], row_nodes[1][2], row_nodes[1][1])
+            self.red_ele.append(
+                np.array(
+                    (mn[2], row[0], mn[0])
+                )
             )
+            self.red_ele.append(
+                np.array(
+                    (mn[0], row[1], mn[1])
+                )
             )
-            self.red_ele.append(np.array(
-                (row_nodes[1][2], row_nodes[2][0], row_nodes[1][0])
-            )
-            )
-            self.red_ele.append(np.array(
-                (row_nodes[1][0], row_nodes[2][1], row_nodes[1][1])
-            )
-            )
-
-        #              x3
-        #            /  |  \
-        #           /   |   \
-        #          /    |    \
-        #         /     |     \
-        #        /      |      \
-        #       x3*------------ x2*
-        #      / \     |      / \
-        #     /   \    |     /   \
-        #    /     \   |    /     \
-        #   /       \  |   /       \
-        #  /         \ |  /         \
-        # x1----------x1*------------x2
-        #          longeset edge
 
     def green_pattern(self, nodes_where_longest, ele):
         """
@@ -1015,150 +1050,104 @@ class AMR:
         edge in the element. The function call self.find_matching_mid_nodes checks whether the mid node of the longest
         edge is present in the bcs_mesh template. If so, the green element is a neighbor of a red element. If not, it
         is the neighbor of a blue element.
+
+        @param nodes_where_longest:
+        @param ele:
         @return:green_ele
         """
+
+        longest_edge = [nodes_where_longest[index] for index in self.for_green_ref]
+
+        mid_node = self.get_mid_nodes(longest_edge, None, shape=None)
+
         nodes = self.nodes_array(ele)
-
-        edge_match = []
-        for gp in nodes:
-            edge_match.append(
-                self.search_matching_mid_nodes(gp, nodes_where_longest)
-            )
-        res = [nodes_where_longest[index] for index in self.for_green_ref]
-        mid_node_le = self.calculate_mid_node(res, len(res))
-        mid_node, no_match = self.find_matching_mid_node(mid_node_le,
-                                                         shape=None
-                                                         )
-
-        nodes = list(nodes)
         nodes_neighbor = self.nodes_array(self.green_marked_neighbor)
-        keep_node, index, _, _, nodes_longest_edge = AMR.keep_rotation_direction(
+        keep_node, _, _, _, nodes_longest_edge = AMR.keep_rotation_direction(
             nodes_neighbor, nodes, nodes_where_longest, ele
         )
 
-        for count, row_nodes in enumerate(zip(nodes_longest_edge,
-                                              mid_node
-                                              )
-                                          ):
-            self.green_ele.append(np.array(
-                (row_nodes[1], keep_node[count], row_nodes[0][0])
+        for count, (nle, mn) in \
+                enumerate(zip(nodes_longest_edge, mid_node)):
+            self.green_ele.append(
+                np.array(
+                    (mn, keep_node[count], nle[0])
+                )
             )
-            )
-            self.green_ele.append(np.array(
-                (row_nodes[1], row_nodes[0][1], keep_node[count])
-            )
+            self.green_ele.append(
+                np.array(
+                    (mn, nle[1], keep_node[count])
+                )
             )
 
-    #              x3
-    #            /  |  \
-    #           /   |   \
-    #          /    |    \
-    #         /     |     \
-    #        /      |      \
-    #       /       |       \
-    #      /        |        \
-    #     /         |         \
-    #    /          |          \
-    #   /           |           \
-    #  /            |            \
-    # x1----------x1*------------x2
-    #          longeset edge
+    def stack_mid_nodes(self, longest_edge, nodes_along_neighbor):
+        """
+        This function stacks the mid nodes for blue elements.
 
-    def blue_pattern_one_neighbor(self, longest_edge, ele_one_neighbor, nodes_where_longest):
+        @param longest_edge:
+        @param nodes_along_neighbor:
+        @return:
+        """
+
+        mid_node_le = self.get_mid_nodes(longest_edge, None, shape=None)
+        mid_node_nle = self.get_mid_nodes(nodes_along_neighbor, None, shape=None)
+
+        try:
+            mid_nodes = np.c_[mid_node_le, mid_node_nle]
+        except ValueError:
+            print(
+                'Shape mismatch in longest edge and not longest edge in the blue element cluster'
+            )
+            raise
+
+        return mid_nodes
+
+    def blue_pattern_one_neighbor(self, ele_one_neighbor, nodes_where_longest):
         """
         Similar approach than the green pattern function. Here it is important to split the blue refinement because
         it can base on one marked neighbors or two.
-        @param: longest_edge
+
         @param: not_longest_edge
         @param: neighbor
         @return:
         """
 
-        nodes_one_neighbor = self.nodes_array(ele_one_neighbor)
+        nodes_along_neighbor, longest_edge = self.mid_node_one_neighbor(
+            self.blue_marked_neighbor, nodes_where_longest, ele_one_neighbor
+        )
 
-        nodes_along_neighbor = []
-        for row_blue in zip(self.ele_undeformed[self.blue_marked_neighbor, 0:3],
-                            self.ele_undeformed[ele_one_neighbor, 0:3]
-                            ):
-            nodes_along_neighbor.append(
-                np.intersect1d(row_blue[0], row_blue[1])
-            )
-
-        le = [longest_edge[index] for index in self.for_blue_ref_one_neighbor]
-        try:
-            mid_node_le = self.calculate_mid_node(le, len(le))
-            match_one_le, no_match_le = self.find_matching_mid_node(
-                mid_node_le, shape=None
-            )
-
-            mid_node_c = self.calculate_mid_node(
-                nodes_along_neighbor, len(nodes_along_neighbor)
-            )
-            match_one_nle, no_match = self.find_matching_mid_node(
-                mid_node_c, shape=None
-            )
-
-        except ValueError:
-            raise "Blue elements can not be assigned"
-
-        try:
-            one_neighbor = np.c_[match_one_nle, match_one_le]
-
-        except ValueError:
-            raise 'Shape mismatch in longest edge and not longest edge in the blue element cluster'
+        mid_nodes = self.stack_mid_nodes(longest_edge, nodes_along_neighbor)
 
         self.create_blue_pattern_one_neighbor(
-            one_neighbor,
+            mid_nodes,
             ele_one_neighbor,
             self.blue_marked_neighbor,
             nodes_where_longest
         )
 
-    def blue_pattern_two_neighbor(
-            self, longest_edge, ele_two_neighbor
-    ):
+    def blue_pattern_two_neighbor(self, longest_edge, ele_two_neighbor):
         """
+        This function gets the mid nodes for blue elements with two neighbors.
 
         @param longest_edge:
         @param ele_two_neighbor:
         @return:
         """
 
-        nodes_two_neighbor = self.nodes_array(ele_two_neighbor)
         self.get_edges_along_blue_elements()
 
         nodes_nle = []
-        res = [longest_edge[index] for index in self.for_blue_ref_two_neighbor]
-        other = []
+        longest_edge = [longest_edge[index] for index in self.for_blue_ref_two_neighbor]
         for idx, nodes in enumerate(self.nodes_along_second_neighbor):
             result = np.isin(
-                res, nodes
+                longest_edge, nodes
             ).all(axis=1)
             if not any(result):
                 nodes_nle.append(nodes)
-            else:
-                other.append(nodes)
 
-        try:
-            mid_node_le = self.calculate_mid_node(res, len(res))
-            match_two, no_match_two_le = self.find_matching_mid_node(mid_node_le,
-                                                                     shape=None
-                                                                     )
-            mid_node_c = self.calculate_mid_node(nodes_nle, len(nodes_nle))
+        mid_nodes = self.stack_mid_nodes(longest_edge, nodes_nle)
+        mid_node_with_le = np.array((mid_nodes[:, 0], longest_edge))
 
-            match_two_nle, no_match_two_nle = self.find_matching_mid_node(mid_node_c,
-                                                                          shape=None
-                                                                          )
-        except ValueError:
-            raise "Blue elements can not be assigned"
-
-        try:
-            two_neighbor = np.c_[match_two, match_two_nle]
-            mid_node_with_le = np.array((match_two, res))
-        except ValueError:
-            raise 'Shape mismatch in longest edge and not longest edge in the blue element cluster'
-
-        self.create_blue_pattern_two_neighbor(two_neighbor,
+        self.create_blue_pattern_two_neighbor(mid_nodes,
                                               ele_two_neighbor,
                                               self.nodes_along_second_neighbor,
                                               mid_node_with_le
@@ -1249,21 +1238,60 @@ class AMR:
                 )
             )
 
-    def main_AMR(self):
-        self.thickness_diff()
+    def get_longest_edge(self):
+        """
+        Calculate the longest edge of all elements.
+        @return: nodes_where_longest, all_edges, marked_edges
+        """
+
         all_ele = np.arange(0, len(self.ele_undeformed))
         nodes_array = self.nodes_array(self.marked_ele)
         marked_edges = self.get_all_edges(nodes_array)
         all_edges = self.get_all_edges(self.nodes_array(all_ele))
         nodes_where_longest = self.get_ele_length(all_ele)
-        self.count_occurence(marked_edges, all_edges, nodes_where_longest)
+
+        return nodes_where_longest, all_edges, marked_edges
+
+    def find_elements_to_refine(self, marked_edges, all_edges, nodes_where_longest):
+        """
+        Main function for the RGB-refinement and to determine the new mid nodes of
+        red and blue elements.
+
+        @param marked_edges:
+        @param all_edges:
+        @param nodes_where_longest:
+        @return:
+        """
+        self.elements_to_refine(marked_edges, all_edges, nodes_where_longest)
         mid_node_coors = self.mid_nodes(self.for_red_ref + self.for_blue_ref_one_neighbor)
+
+        return mid_node_coors
+
+    def create_all_pattern(self, mid_node_coors, nodes_where_longest):
+        """
+        This function concatenates all pattern creations
+
+        @param mid_node_coors:
+        @param nodes_where_longest:
+        @return:
+        """
+
         self.red_pattern(mid_node_coors, self.for_red_ref)
         self.green_pattern(nodes_where_longest, self.for_green_ref)
         self.blue_pattern_one_neighbor(
-            nodes_where_longest, self.for_blue_ref_one_neighbor, nodes_where_longest
+            self.for_blue_ref_one_neighbor, nodes_where_longest
         )
 
         self.blue_pattern_two_neighbor(
             nodes_where_longest, self.for_blue_ref_two_neighbor
         )
+
+    def main_AMR(self):
+        """
+        Main function
+        @return:
+        """
+        self.thickness_diff()
+        nodes_where_longest, all_edges, marked_edges = self.get_longest_edge()
+        mid_node_coors = self.find_elements_to_refine(marked_edges,all_edges, nodes_where_longest)
+        self.create_all_pattern(mid_node_coors, nodes_where_longest)
