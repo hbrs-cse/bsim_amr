@@ -1,107 +1,56 @@
 import os
-from refine_ele import AMR
-from bcs_write import write_file
-import cProfile
-import io
-import pstats
-
-
-
 
 class BSimAmr:
     def __init__(self, path, out_path, thickness):
-        self.amr = AMR(thickness)
 
-        self.bcs_path_undef = None
-        self.bcs_path_def = None
-
-        self.ele_data_def = None
-        self.ele_data_undef = None
-        self.mesh_data_def = None
-        self.mesh_data_undef = None
-
-        self.filepath_in = path
-        self.fileout_path = out_path
+        self.filepath = path
+        self.out_path = out_path
         self.thickness = thickness
 
     @property
-    def bcs_path_undef(self):
-        return self.__bcs_path_undef
+    def filepath(self):
+        """
+        Filepath setter
+        """
+        return self.__filepath
 
-    @bcs_path_undef.setter
-    def bcs_path_undef(self, path):
-        self.Bcs.filepath = self.filepath_in
-        self._bcs_path_undef = os.path.abspath(path)
-        self.Bcs.path_und = os.path.abspath(path)
+    @filepath.setter
+    def filepath(self, path):
+        """
+        Check if the path Variable is a string. If not print out an error message. Otherwise assign the path
+        string to the classes instance bcs_file_name"
+
+        @param path_str:
+        @return:
+        """
+        if not isinstance(path, str):
+            raise TypeError("Path not defined as a string")
+        else:
+            self.__filepath = path
 
     @property
-    def check_out_path(self):
-        return self.__check_out_path
+    def out_path(self):
+        return self.__out_path
 
-    @check_out_path.setter
-    def check_out_path(self):
-        self.Bcs.check_out_path = self.fileout_path
+    @out_path.setter
+    def out_path(self, out_path):
+        if isinstance(out_path, str):
+            self.__out_path = out_path
+        else:
+            raise TypeError("Path not defined as a string")
 
     @property
-    def set_thickness(self):
+    def thickness(self):
         return self.__thickness
 
-    @set_thickness.setter
-    def set_thickness(self):
-        self.amr.thickness_diff = thickness
+    @thickness.setter
+    def thickness(self, thickness):
+        if not isinstance(thickness, int):
+            raise ValueError("Wall thickness difference must be an integer")
+        elif thickness <= 0:
+            raise ValueError("Wall thickness difference is negativ")
+        elif thickness >= 100:
+            raise ValueError("Wall thickness difference is too big")
+        else:
+            self.__thickness = thickness
 
-    @property
-    def bcs_path_def(self):
-        return self._bcs_path_def
-
-    @bcs_path_def.setter
-    def bcs_path_def(self, path):
-        self._bcs_path_def = os.path.abspath(path)
-        self.Bcs.path_def = os.path.abspath(path)
-
-    def read_bcs(self):
-        self.Bcs.run_reading()
-        self.ele_data_def = self.Bcs.ele_undeformed
-        self.ele_data_undef = self.Bcs.ele_deformed
-        self.mesh_data_def = self.Bcs.mesh_undeformed
-        self.mesh_data_undef = self.Bcs.mesh_deformed
-        self.bc = self.Bcs.bc
-        self.Bcs.filepath
-
-    def run_amr(self):
-        self.amr.ele_undeformed = self.ele_data_undef
-        self.amr.ele_deformed = self.ele_data_def
-        self.amr.mesh_undeformed = self.mesh_data_undef
-        self.amr.mesh_deformed = self.mesh_data_def
-        self.amr.bc = self.bc
-        self.amr.set_thickness_diff
-        self.amr.main_amr()
-        self.write = write_file(self.amr, out_path)
-        self.write.check_out_path
-        self.write.check_path()
-        self.write.manipulate_ele()
-        self.write.append_mesh()
-        self.write.write_file()
-        self.write.check_success()
-
-    def main(self):
-        self.bcs_path_undef = path
-        self.bcs_path_def = path
-        self.read_bcs()
-        self.run_amr()
-
-
-
-if __name__ == '__main__':
-    pr = cProfile.Profile()
-    pr.enable()
-    bSimAmr = bcs_read(path, out_path, thickness)
-    bSimAmr.main()
-    pr.disable()
-    s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
-    ps.print_stats()
-
-    with open('C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/perf_output.txt', 'w+'
-              ) as f:
-        f.write(s.getvalue())

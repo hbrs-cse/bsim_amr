@@ -11,8 +11,6 @@ import glob
 import numpy as np
 import pandas as pd
 from bsim_amr import BSimAmr
-from config import config_file
-
 
 class bcs_read(BSimAmr):
     def __init__(self, path, out_path, thickness):
@@ -25,27 +23,6 @@ class bcs_read(BSimAmr):
         self.get_latest_deformed = []
         self.get_latest_undeformed = []
         self.__check_out_path = []
-
-    @property
-    def filepath(self):
-        """
-        Filepath setter
-        """
-        return self.__filepath
-
-    @filepath.setter
-    def filepath(self, path_str):
-        """
-        Check if the path Variable is a string. If not print out an error message. Otherwise assign the path
-        string to the classes instance bcs_file_name"
-
-        @param path_str:
-        @return:
-        """
-        if isinstance(path_str, str):
-            self.__filepath = path_str
-        else:
-            raise TypeError("Path not defined as a string")
 
     def get_path_undeformed(self):
         """ "
