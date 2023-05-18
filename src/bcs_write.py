@@ -1,59 +1,26 @@
 import numpy as np
 import os
+from refine_ele import AMR
 
-
-class write_file:
+class write_file (AMR):
     """
     Class for writing .bcs-files
     """
 
-    def __init__(self, obj, out_path):
+    def __init__(self, path, out_path, thickness):
+        super().__init__(path, out_path, thickness)
+
         self._out_path = out_path
-
-        self.ele_undeformed = obj.ele_undeformed
-        self.ele_deformed = obj.ele_deformed
-        self.mesh_undeformed = obj.mesh_undeformed
-        self.mesh_deformed = obj.ele_deformed
-        self.bc = obj.bc
-
-        self.for_red_ref = obj.for_red_ref
-        self.for_green_ref = obj.for_green_ref
-        self.for_blue_ref_one_neighbor = obj.for_blue_ref_one_neighbor
-        self.for_blue_ref_two_neighbor = obj.for_blue_ref_two_neighbor
-
-        self.blue_ele = obj.blue_ele
-        self.green_ele = obj.green_ele
-        self.red_ele = obj.red_ele
-
-        self.bcs_mesh = obj.bcs_mesh
-
-        self.check_out_path = out_path
         self.file_name = None
 
-    @property
-    def check_out_path(self):
+    def run_amr(self):
         """
-        Assigning the output path
-        @return: self.__check_out_path
-        """
-        return self.__check_out_path
+        Run the whole AMR loop
 
-    @check_out_path.setter
-    def check_out_path(self, path):
-        if isinstance(path, str):
-            self.__check_out_path = path
-        else:
-            raise TypeError("Error while assigning the output folder")
-
-    def check_path(self):
-        """
-        Check if the output path folder ends with /out
         @return:
         """
-        if self.check_out_path.endswith("/out"):
-            pass
-        else:
-            raise TypeError("Wrong output folder")
+        super().main_amr()
+
 
     def manipulate_ele(self):
         """
@@ -137,7 +104,7 @@ class write_file:
             self.mesh_undeformed, complete_mesh_cluster, axis=0
         )
 
-    def write_file(self):
+    def write_bcs(self):
         """
         Write the new file.
         @return:
@@ -154,7 +121,7 @@ class write_file:
             "-111 1 1 1 1 1 1 END OF COORS\n",
             "-111 1 1 1 1 1 1 END OF BCs\n",
         ]
-        with open(os.path.join(self._out_path, self.file_name), "w") as bcs_amf:
+        with open(os.path.join(self.out_path, self.file_name), "w") as bcs_amf:
             bcs_amf.write(filtering[0])
             bcs_amf.write(filtering[1])
 
@@ -200,7 +167,19 @@ class write_file:
         Checks if the file exisits.
         @return:
         """
-        if os.path.exists(os.path.join(self.__check_out_path, self.file_name)):
-            print("Success!!")
+        if os.path.exists(os.path.join(self.out_path, self.file_name)):
+            print("Success!")
         else:
             raise RuntimeError("Did not complete")
+
+    def run_main(self):
+        """
+        Run the whole project
+
+        """
+
+        self.run_amr()
+        self.manipulate_ele()
+        self.append_mesh()
+        self.write_bcs()
+        self.check_success()

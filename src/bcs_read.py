@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from bsim_amr import BSimAmr
 
+
 class bcs_read(BSimAmr):
     def __init__(self, path, out_path, thickness):
         super().__init__(path, out_path, thickness)
@@ -22,7 +23,11 @@ class bcs_read(BSimAmr):
         self.path_def = None
         self.get_latest_deformed = []
         self.get_latest_undeformed = []
-        self.__check_out_path = []
+        self.ele_undeformed = None
+        self.ele_deformed = None
+        self.mesh_undeformed = None
+        self.mesh_deformed = None
+        self.bc = None
 
     def get_path_undeformed(self):
         """ "
@@ -111,7 +116,7 @@ class bcs_read(BSimAmr):
                 usecols=[1, 2, 3, 4, 5],
             ).to_numpy()
 
-        self.ele_deformed, self.ele_undeformed = (
+        self.ele_undeformed, self.ele_deformed = (
             ele_data_container[0],
             ele_data_container[1],
         )
@@ -137,7 +142,7 @@ class bcs_read(BSimAmr):
                 usecols=[1, 2, 3, 4, 5],
             ).to_numpy()
 
-            self.mesh_deformed, self.mesh_undeformed = (
+            self.mesh_undeformed, self.mesh_deformed = (
                 mesh_data_container[0],
                 mesh_data_container[1],
             )
@@ -168,10 +173,3 @@ class bcs_read(BSimAmr):
         self.read_ele()
         self.read_mesh()
         self.read_bc()
-
-if __name__ == '__main__':
-    path, out_path, thickness = config_file()
-    bcs_read = bcs_read(path, out_path, thickness)
-    bcs_read.run_reading()
-
-    print('d')

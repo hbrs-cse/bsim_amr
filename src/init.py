@@ -1,19 +1,13 @@
-from bsim_amr import BSimAmr
-from bcs_read import bcs_read
-from refine_ele import AMR
+from bcs_write import write_file
 
 import cProfile
 import io
 import pstats
 
-
-path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
-out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out/Vierkant/out"
+path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/*"
+out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out"
 thickness = 50
 
-super_obj = BSimAmr(path, out_path, thickness)
-bcs_read = bcs_read(path, out_path, thickness)
-#refine_ele = AMR()
 
 def get_pstats():
     """
@@ -33,6 +27,7 @@ def get_pstats():
         f.write(s.getvalue())
 
 
-
-
-
+if __name__ == '__main__':
+    write_bcs = write_file(path, out_path, thickness)
+    write_bcs.run_main()
+    get_pstats()

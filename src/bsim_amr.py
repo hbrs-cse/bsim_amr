@@ -34,10 +34,13 @@ class BSimAmr:
 
     @out_path.setter
     def out_path(self, out_path):
-        if isinstance(out_path, str):
-            self.__out_path = out_path
-        else:
+        if not isinstance(out_path, str):
             raise TypeError("Path not defined as a string")
+        elif not out_path.endswith("/out"):
+            raise FileNotFoundError("Path not defined as a string")
+        else:
+            self.__out_path = out_path
+
 
     @property
     def thickness(self):
