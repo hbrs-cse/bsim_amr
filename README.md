@@ -12,21 +12,3 @@ The following refinement strategies are used:
 
 Note that the marking strategy itself is not based on the algorithm that is proposed by Willy Dörfler. At the moment, the marking of an element
 is based on the thickness difference between undeformed and deformed shell element. Additional marking strategies should be used to get a better result.
-
-
-**Current status**
-
-
-Solved most of the rotation problems and the mesh looks good in most parts. 
-
-
-<img src="img/solved_rotation_issue.jpg" width="300" height="300" alt="Correct refined">
-
-
-In some parts there are still hanging nodes which occur because of a bug
-in the second iteration loop
-
-
-<img src="img/hanging_nodes.jpg" width="300" height="300" alt="Wrong refined">
-
-

@@ -28,6 +28,7 @@ class bcs_read(BSimAmr):
         self.mesh_undeformed = None
         self.mesh_deformed = None
         self.bc = None
+        self.coors = None
 
     def get_path_undeformed(self):
         """ "
@@ -156,13 +157,25 @@ class bcs_read(BSimAmr):
         bc_index = self.line.index("-111 1 1 1 1 1 1 END OF BCs\n")
         bc_begin_index = self.line.index("-111 1 1 1 1 1 1 END OF COORS\n")
 
-        self.bc = pd.read_csv(
-            self.path_lib[0],
-            sep="\\s+",
-            engine="python",
-            skiprows=bc_begin_index + 1,
-            nrows=bc_index - bc_begin_index - 2,
-        ).to_numpy()
+        if bc_index - bc_begin_index > 1:
+
+            self.bc = pd.read_csv(
+                self.path_lib[0],
+                sep="\\s+",
+                engine="python",
+                skiprows=bc_begin_index + 1,
+                nrows=bc_index - bc_begin_index - 2,
+            ).to_numpy()
+
+            self.coors = pd.read_csv(
+                self.path_lib[0],
+                sep="\\s+",
+                engine="python",
+                skiprows=bc_begin_index + (bc_index - bc_begin_index),
+                nrows=bc_index + (bc_index - bc_begin_index)
+            ).to_numpy()
+        else:
+            self.bc = None
 
     def run_reading(self):
         """

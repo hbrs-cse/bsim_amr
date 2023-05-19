@@ -79,8 +79,9 @@ class write_file (AMR):
                                         axis=0
                                         )
 
-        self.ele_undeformed = np.append(
+        self.ele_undeformed = np.insert(
             self.ele_undeformed,
+            0,
             np.concatenate(
                 (
                     complete_red_cluster,
@@ -109,10 +110,10 @@ class write_file (AMR):
         Write the new file.
         @return:
         """
-        self.file_name = "Undeformed_refined_mesh7.bcs"
+        self.file_name = "test_mesh_full.bcs"
         file_length_ele = len(self.ele_undeformed)
         file_length_mesh = len(self.mesh_undeformed)
-        file_length_bc = len(self.bc)
+        file_length_bc = len(self.bc) if self.bc else None
         filtering = [
             "B-SIM - DATA OF THE SHEET\n",
             "FULL\n",
@@ -155,12 +156,13 @@ class write_file (AMR):
                 )
 
             bcs_amf.write(filtering[4])
-            for bc in range(file_length_bc):
-                bcs_amf.write("{:5d}{:6d}\n".format(
-                    self.bc[bc, 0].astype(np.int), self.bc[bc, 1].astype(np.int)
-                )
-                )
-            bcs_amf.write(filtering[4])
+            if file_length_bc:
+                for bc in range(file_length_bc):
+                    bcs_amf.write("{:5d}{:6d}\n".format(
+                        self.bc[bc, 0].astype(np.int), self.bc[bc, 1].astype(np.int)
+                    )
+                    )
+            bcs_amf.write(filtering[5])
 
     def check_success(self):
         """

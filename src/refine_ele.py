@@ -88,35 +88,27 @@ class AMR(marking_ele):
 
         return all_neighbor
 
-    def direct_neighbor(self, ele):
+    def long_stacked_edges_array(self, ele):
         """
-        See the find_intersection functions docstring for more information.
+        Creats an extended version of tuple nodes with a corresponcing column for element numbers.
 
-        After determining the direct neighbor, a loop checks whether the direct neighbor of the marked elements
-        is somewhere in the list of marked elements or if it's an element that has toi be green/blue refined.
-        @return:direct_neighbor, marked_ele
+        @param ele:
+        @return: all_neighbor_long
         """
 
-        nodes = self.nodes_array(ele)
-        check_nodes = self.ele_undeformed[:, 0:3]
+        index = np.repeat(ele, 3)
+        all_edges = self.nodes_array(ele)
+        all_edges = self.get_all_edges(all_edges)
 
-        neighbor_collection = []
+        edges = []
+        for i in range(len(all_edges[0])):
+            edges.append(all_edges[0][i])
+            edges.append(all_edges[1][i])
+            edges.append(all_edges[2][i])
 
-        for i, row in enumerate(nodes):
+        all_neighbor_long = np.c_[index, edges]
 
-            all_neighbor = np.asarray(AMR.neighbor_intersection(row, check_nodes))
-
-            all_neighbor = AMR.swap_neighbor(all_neighbor)
-
-            try:
-                for idx, list_counter in enumerate(all_neighbor):
-                    neighbor_collection.append(list_counter)
-            except ValueError:
-                raise "Something went wrong while determining the direct neighbor..."
-
-        direct_neighbor = np.asarray(neighbor_collection)[:, 1]
-
-        return direct_neighbor
+        return all_neighbor_long
 
     def get_ele_length(self, marked_ele):
         """
@@ -264,10 +256,10 @@ class AMR(marking_ele):
             if self.for_blue_ref_two_neighbor:
                 if self.for_green_ref:
                     self.all_ele = (
-                            self.for_blue_ref_one_neighbor
-                            + self.for_blue_ref_two_neighbor
-                            + self.for_red_ref
-                            + self.for_green_ref
+                        self.for_blue_ref_one_neighbor
+                        + self.for_blue_ref_two_neighbor
+                        + self.for_red_ref
+                        + self.for_green_ref
                     )
 
         else:
@@ -304,11 +296,11 @@ class AMR(marking_ele):
             hanging_edges.append(marked_edges[1][i])
             hanging_edges.append(marked_edges[2][i])
 
-        marked_ele = self.marked_ele
         all_edges = self.create_stacked_edges_array(all_edges)
         hanging_edges = np.asarray(hanging_edges)
-        marked_ele = np.repeat(np.array(marked_ele).copy(), 3, axis=0)
         ele_num = np.arange(0, len(self.ele_undeformed))
+
+        long_ele = self.long_stacked_edges_array(ele_num)
 
         while len(hanging_edges) > 0:
             blue_hanging_edges = []
@@ -317,47 +309,52 @@ class AMR(marking_ele):
             hold_back_green_neighbor = []
             blue_marked_ele = []
             red_marked_ele = []
-            blue = []
+
             for idx, check_edges in enumerate(all_edges):
                 counter = 0
                 edges = []
                 check = []
+                edge_index = []
                 for edge_counter, bounding_edges in enumerate(check_edges):
-
-                    check.append(
-                        np.isin(
-                            hanging_edges, bounding_edges
-                        ).all(axis=1)
-                    )
+                    check.append(np.isin(hanging_edges, bounding_edges).all(axis=1))
 
                     edges.append(bounding_edges)
 
                     if check[edge_counter].any():
                         counter += 1
+                        edge_index.append(edge_counter)
 
                 if counter == 3:
-                    if ele_num[idx] not in self.for_red_ref:
+                    if ele_num[idx] not in self.all_ele:
                         self.for_red_ref.append(ele_num[idx])
 
                 if counter == 2:
                     le = nodes_where_longest[ele_num[idx]]
                     check_for_le = np.isin(hanging_edges, le).all(axis=1)
                     if any(check_for_le):
+                        if ele_num[idx] not in self.all_ele:
+                            self.for_blue_ref_two_neighbor.append(ele_num[idx])
+                            match_index = AMR.get_marked_neighbor(
+                                edge_index, check_edges, long_ele
+                            )
 
-                        self.get_second_blue_element_neighbor(
-                            marked_ele, ele_num, idx, check
-                        )
+                            blue_neighbor_cluster = []
+
+                            for cluster_index in match_index:
+                                blue_neighbor_cluster.append(
+                                    long_ele[cluster_index[0], 0]
+                                )
+                            self.two_blue_marked_neighbor.append(blue_neighbor_cluster)
 
                     else:
                         if ele_num[idx] not in self.all_ele:
-                            if ele_num[idx] not in self.for_red_ref:
-                                self.for_red_ref.append(ele_num[idx])
-                                longest_edge = nodes_where_longest[ele_num[idx]]
+                            self.for_red_ref.append(ele_num[idx])
+                            longest_edge = nodes_where_longest[ele_num[idx]]
 
-                                if ele_num[idx] not in red_marked_ele:
-                                    red_marked_ele.append(ele_num[idx])
+                            if ele_num[idx] not in red_marked_ele:
+                                red_marked_ele.append(ele_num[idx])
 
-                                red_hanging_edges.append(longest_edge)
+                            red_hanging_edges.append(longest_edge)
 
                 if counter == 1:
                     le = nodes_where_longest[ele_num[idx]]
@@ -365,141 +362,137 @@ class AMR(marking_ele):
                     if any(check_for_le):
                         if ele_num[idx] not in self.all_ele:
                             hold_back_green.append(ele_num[idx])
-
-                            for find_match in check:
-                                true_indice = np.where(find_match)[0]
-                                if len(true_indice) > 1:
-                                    if marked_ele[true_indice[0]] == ele_num[idx]:
-                                        hold_back_green_neighbor.append(
-                                            marked_ele[true_indice[1]]
-                                        )
-                                    else:
-                                        hold_back_green_neighbor.append(
-                                            marked_ele[true_indice[0]]
-                                        )
-
-                                else:
-                                    if true_indice:
-                                        hold_back_green_neighbor.append(
-                                            marked_ele[true_indice[0]]
-                                        )
+                            match_index = AMR.get_marked_neighbor(
+                                edge_index, check_edges, long_ele
+                            )
+                            hold_back_green_neighbor.append(
+                                long_ele[match_index[0][0], 0]
+                            )
 
                     else:
-                        if ele_num[idx] not in self.for_blue_ref_one_neighbor:
-                            if ele_num[idx] not in self.all_ele:
-                                self.for_blue_ref_one_neighbor.append(ele_num[idx])
-                                longest_edge = nodes_where_longest[ele_num[idx]]
+                        if ele_num[idx] not in self.all_ele:
+                            self.for_blue_ref_one_neighbor.append(ele_num[idx])
+                            longest_edge = nodes_where_longest[ele_num[idx]]
 
-                                if ele_num[idx] not in blue_marked_ele:
-                                    blue_marked_ele.append(ele_num[idx])
+                            if ele_num[idx] not in blue_marked_ele:
+                                blue_marked_ele.append(ele_num[idx])
 
-                                blue_hanging_edges.append(longest_edge)
-
-                                for find_match in check:
-                                    true_indice = np.where(find_match)[0]
-                                    for index in true_indice:
-                                        self.blue_marked_neighbor.append(marked_ele[index])
-                                    blue.append(ele_num[idx])
-
-            green_edges = self.nodes_array(hold_back_green)
-            green_edges = self.get_all_edges(green_edges)
-
-            wrong_index = []
-
-            for tuple_ele in green_edges:
-                for index_ele, edges in enumerate(tuple_ele):
-                    if blue_hanging_edges:
-                        wrong_blue = np.isin(blue_hanging_edges, edges).all(axis=1)
-                        if wrong_blue.any():
-                            index = np.where(wrong_blue)[0]
-                            self.two_blue_marked_neighbor.append(
-                                [hold_back_green_neighbor[index_ele],
-                                 blue_marked_ele[index[0]]
-                                 ]
+                            blue_hanging_edges.append(longest_edge)
+                            match_index = AMR.get_marked_neighbor(
+                                edge_index, check_edges, long_ele
+                            )
+                            self.blue_marked_neighbor.append(
+                                long_ele[match_index[0][0], 0]
                             )
 
-                            self.for_blue_ref_two_neighbor.append(
-                                hold_back_green[index_ele]
-                            )
-                    if red_hanging_edges:
-                        wrong_red = np.isin(red_hanging_edges, edges).all(axis=1)
-                        if wrong_red.any():
-                            index = np.where(wrong_red)[0]
-                            self.two_blue_marked_neighbor.append(
-                                [hold_back_green_neighbor[index_ele],
-                                 red_marked_ele[index[0]]
-                                 ]
-                            )
-                            self.for_blue_ref_two_neighbor.append(
-                                hold_back_green[index_ele]
-                            )
-
-                for green_ele in range(len(hold_back_green_neighbor)):
-                    if green_ele not in wrong_index:
-                        self.for_green_ref.append(hold_back_green[green_ele])
-                        self.green_marked_neighbor.append(hold_back_green_neighbor[green_ele])
+            self.append_green_elements(
+                hold_back_green,
+                hold_back_green_neighbor,
+                blue_hanging_edges,
+                blue_marked_ele,
+                red_hanging_edges,
+                red_marked_ele,
+            )
 
             hanging_edges = np.asarray(blue_hanging_edges + red_hanging_edges)
-            marked_ele = np.array(blue_marked_ele + red_marked_ele)
-
             self.all_marked_elements()
 
-        return all_edges
+            print(
+                "Marked {} blue elements with only one neighbor".format(
+                    len(self.for_blue_ref_one_neighbor)
+                )
+            )
+            print("Marked {} green elements".format(len(self.for_green_ref)))
+            print(
+                "Marked {} blue elements with two neighbor".format(
+                    len(self.for_blue_ref_two_neighbor)
+                )
+            )
+            print("Marked {} red elements".format(len(self.for_red_ref)))
 
-    def neighbors_along_longest_edge(self, all_edges, longest_edges):
+    def append_green_elements(
+        self,
+        hold_back_green,
+        hold_back_green_neighbor,
+        blue_hanging_edges,
+        blue_marked_ele,
+        red_hanging_edges,
+        red_marked_ele,
+    ):
         """
-        Returns the element along the longest edge of the marked element.
-        @param all_edges:
-        @param longest_edges:
-        @return: stackes_neighbor, ele_num, blue_ele
+
+        @param hold_back_green:
+        @param hold_back_green_neighbor:
+        @param blue_hanging_edges:
+        @param blue_marked_ele:
+        @param red_hanging_edges:
+        @param red_marked_ele:
+        @return:
         """
-        ele_num = []
-        blue_ele = []
-        for index, edges in enumerate(longest_edges):
-            for column, col_index in enumerate(range(3)):
-                edge_search = np.isin(all_edges[:, col_index], edges).all(axis=1)
+        green_edges = self.nodes_array(hold_back_green)
+        green_edges = self.get_all_edges(green_edges)
 
-                if edge_search.any():
-                    ele_index = np.where(edge_search)[0]
-                    for ele in ele_index:
-                        if not np.array_equal(all_edges[ele, column], edges):
-                            ele_num.append(ele_index[0])
-                            blue_ele.append(index)
+        wrong_index = []
 
-        longest_edge_neighbor_edge = self.nodes_array(ele_num)
-        get_edges = AMR.get_all_edges(longest_edge_neighbor_edge)
-        stacked_neighbor = self.create_stacked_edges_array(get_edges)
+        for tuple_ele in green_edges:
+            for index_ele, edges in enumerate(tuple_ele):
+                if blue_hanging_edges:
+                    wrong_blue = np.isin(blue_hanging_edges, edges).all(axis=1)
+                    if wrong_blue.any():
+                        index = np.where(wrong_blue)[0]
+                        self.two_blue_marked_neighbor.append(
+                            [
+                                hold_back_green_neighbor[index_ele],
+                                blue_marked_ele[index[0]],
+                            ]
+                        )
 
-        return stacked_neighbor, ele_num, blue_ele
+                        self.for_blue_ref_two_neighbor.append(
+                            hold_back_green[index_ele]
+                        )
+                if red_hanging_edges:
+                    wrong_red = np.isin(red_hanging_edges, edges).all(axis=1)
+                    if wrong_red.any():
+                        index = np.where(wrong_red)[0]
+                        self.two_blue_marked_neighbor.append(
+                            [
+                                hold_back_green_neighbor[index_ele],
+                                red_marked_ele[index[0]],
+                            ]
+                        )
+                        self.for_blue_ref_two_neighbor.append(
+                            hold_back_green[index_ele]
+                        )
+        print("Wrong assigned index", wrong_index)
+        for green_ele in range(len(hold_back_green_neighbor)):
+            if green_ele not in wrong_index:
+                self.for_green_ref.append(hold_back_green[green_ele])
+                self.green_marked_neighbor.append(hold_back_green_neighbor[green_ele])
 
-    def get_second_blue_element_neighbor(self, marked_ele, ele_num, idx, check):
+    @staticmethod
+    def get_marked_neighbor(edge_index, check_edges, long_ele):
         """
-        If an element is blue marked and has two neighbors we need the element numbers of both neighbors
-        for further operations. Therefore we get the index of the match of the unmarked edge and the marked
-        edge. The marked_ele contains all marked elements and is the same shape as the check variable used in
-        the count_occurence function. Therefore we can directly but the index into the marked_ele function
-        and get both neighbors.
+        Get the neighbor of the freshly marked element. edge_index is the index where the tuple match occured.
+        It can be 0,1 or 2. Check edges are the edges we checked, which are 3 tuples. Long_ele is a list
+        of all mesh tuples with their corresponding node numbers. Neighboring edges swap their node rotation,
+        meaning a neighbor tuple matches f.e. if Element 1: [523, 87]; Element 2: [87. 523].
+        Swaping the nodes and using np.where on the long_ele array returns a index list where a match occurs.
+        If we knoe the index, we also know the element numbers because they are along the first column of the
+        long_ele array.
 
-        @param marked_ele:
-        @param ele_num:
-        @param idx:
-        @param check:
+        @param edge_index:
+        @param check_edges:
+        @param long_ele:
         @return:
         """
 
-        # Append the marked element number to the instance variable "self.for_blue_ref_two_neighbor"
-        self.for_blue_ref_two_neighbor.append(ele_num[idx])
-
-        temp_blue_neighbor = []
-
-        for find_match in check:
-            true_indice = np.where(find_match)[0]
-
-            if true_indice is not None or true_indice is True or len(true_indice) > 0:
-                for index in true_indice:
-                    temp_blue_neighbor.append(marked_ele[index])
-
-        self.two_blue_marked_neighbor.append(temp_blue_neighbor)
+        match_index = []
+        for row in edge_index:
+            swap_nodes = [check_edges[row][1], check_edges[row][0]]
+            match_index.append(
+                np.where((long_ele[:, 1::] == swap_nodes).all(axis=1))[0]
+            )
+        return match_index
 
     def get_edges_along_blue_elements(self):
         """
@@ -511,7 +504,7 @@ class AMR(marking_ele):
         second_neighbor = self.nodes_array(self.two_blue_marked_neighbor[:, 1])
         marked_ele = self.nodes_array(self.for_blue_ref_two_neighbor)
 
-        for (fn, sn, me,) in zip(first_neighbor, second_neighbor, marked_ele, ):
+        for (fn, sn, me,) in zip(first_neighbor,second_neighbor,marked_ele,):
             self.nodes_along_second_neighbor.append(np.intersect1d(fn, me))
             self.nodes_along_second_neighbor.append(np.intersect1d(sn, me))
 
@@ -525,26 +518,19 @@ class AMR(marking_ele):
         @return: mid_node_coor
         """
 
-        """
-        red_coors = self.neighbor_coordinates(ele)
+        coors = self.neighbor_coordinates(ele)
         mid_node = [np.array([]), np.array([]), np.array([])]
 
-        mid_node[0] = np.divide((np.add(red_coors[0], red_coors[1])), 2).round(
-            decimals=6
-        )
+        mid_node[0] = np.divide((np.add(coors[0], coors[1])), 2).round(decimals=6)
 
-        mid_node[1] = np.divide((np.add(red_coors[1], red_coors[2])), 2).round(
-            decimals=6
-        )
+        mid_node[1] = np.divide((np.add(coors[1], coors[2])), 2).round(decimals=6)
 
-        mid_node[2] = np.divide((np.add(red_coors[2], red_coors[0])), 2).round(
-            decimals=6
-        )
+        mid_node[2] = np.divide((np.add(coors[2], coors[0])), 2).round(decimals=6)
 
         for col in range(3):
             mid_node[col] = np.split(np.concatenate(mid_node[col]), len(mid_node[col]))
 
-        mid_node_coor = np.stack((mid_node[0], mid_node[1], mid_node[2])).reshape(
+        mid_node_coor = np.hstack((mid_node[0], mid_node[1], mid_node[2])).reshape(
             len(mid_node[0]) * 3, 3
         )
 
@@ -558,39 +544,7 @@ class AMR(marking_ele):
         # keeps the chronologically order)
         bcs_mesh = unique_mesh[np.argsort(idx)]
         self.bcs_mesh = np.hstack((node_axis[:, np.newaxis], bcs_mesh))
-        """
-        red_coors = self.neighbor_coordinates(ele)
-        mid_node_1 = np.divide(
-            (np.add(red_coors[0], red_coors[1])), 2
-        ).round(decimals=6)
-        mid_node_2 = np.divide(
-            (np.add(red_coors[1], red_coors[2])), 2
-        ).round(decimals=6)
-        mid_node_3 = np.divide(
-            (np.add(red_coors[2], red_coors[0])), 2
-        ).round(decimals=6)
 
-        split_size = len(mid_node_1)
-        mid_node_1 = np.split(np.concatenate(mid_node_1), split_size)
-        mid_node_2 = np.split(np.concatenate(mid_node_2), split_size)
-        mid_node_3 = np.split(np.concatenate(mid_node_3), split_size)
-
-        mid_node_coor = np.hstack(
-            (mid_node_1, mid_node_2, mid_node_3)
-        ).reshape(
-            len(mid_node_1) * 3, 3
-        )
-
-        unique_mesh, idx = np.unique(mid_node_coor, axis=0, return_index=True)
-        node_axis = np.arange(len(self.mesh_undeformed) + 1, len(
-            self.mesh_undeformed
-        ) + len(unique_mesh) + 1
-                              ).astype(np.int)
-
-        # Keeping the ordner because np.unique sorts by size (Not necessary but
-        # keeps the chronologically order)
-        bcs_mesh = unique_mesh[np.argsort(idx)]
-        self.bcs_mesh = np.hstack((node_axis[:, np.newaxis], bcs_mesh))
         return mid_node_coor
 
     def find_matching_mid_node(self, mid_nodes_coors, shape):
@@ -643,19 +597,6 @@ class AMR(marking_ele):
 
         return mid_nodes, no_match
 
-    def matching_mid_nodes(self, edge_match, nodes_where_longest):
-        """
-        This function returns the mid node coordinate at the edges where the longest edge is.
-        @param: edge_match
-        @param: nodes_where_longest
-        @return: mid_node
-        """
-
-        match = [nodes_where_longest[index] for index in edge_match]
-        mid_node = self.calculate_mid_node(match, len(match))
-
-        return mid_node
-
     def calculate_mid_node(self, match, container_len):
         """
         This function calculates the mid node coordinate at the edges where the longest edge is.
@@ -681,21 +622,6 @@ class AMR(marking_ele):
         )
 
         return mid_node
-
-    @staticmethod
-    def search_matching_mid_nodes(longest_edge_nodes, nodes_where_longest):
-        """
-        @param: longest_edge_nodes
-        @param: nodes_where_longest
-        @return: edge_match
-        """
-
-        new_nodes = AMR.neighbor_intersection(longest_edge_nodes, nodes_where_longest)
-        for idx, result in enumerate(new_nodes):
-            if len(result) == 2:
-                return new_nodes[idx][0]
-            elif new_nodes[idx]:
-                return new_nodes[idx][0]
 
     @staticmethod
     def keep_rotation_direction(nodes_neighbor, nodes, nodes_where_longest, ele):
@@ -729,7 +655,6 @@ class AMR(marking_ele):
             intersection, _, indices = np.intersect1d(
                 row[0], row[1], return_indices=True
             )
-
             idx1.append(np.where(row[0] == intersection[0]))
             idx2.append(np.where(row[0] == intersection[1]))
 
@@ -774,7 +699,7 @@ class AMR(marking_ele):
         return node_rotation
 
     def find_vertex_and_mid_node(
-            self, nodes, neighbor_one, neighbor_two, two_neighbor, mid_node_with_le
+        self, nodes, neighbor_one, neighbor_two, two_neighbor, mid_node_with_le
     ):
         """
         Find the node that closes the element and the corresponding vertex node. This is important because
@@ -956,7 +881,7 @@ class AMR(marking_ele):
 
         return mid_nodes
 
-    def blue_pattern_one_neighbor(self, ele_one_neighbor, nodes_where_longest):
+    def blue_pattern_one_neighbor(self, marked_ele, neighbor_ele, nodes_where_longest):
         """
         Similar approach than the green pattern function. Here it is important to split the blue refinement because
         it can base on one marked neighbors or two.
@@ -967,13 +892,13 @@ class AMR(marking_ele):
         """
 
         nodes_along_neighbor, longest_edge = self.mid_node_one_neighbor(
-            self.blue_marked_neighbor, nodes_where_longest, ele_one_neighbor
-        )
+            marked_ele, nodes_where_longest, neighbor_ele
+        )[:5]
 
         mid_nodes = self.stack_mid_nodes(longest_edge, nodes_along_neighbor)
 
         self.create_blue_pattern_one_neighbor(
-            mid_nodes, ele_one_neighbor, self.blue_marked_neighbor, nodes_where_longest
+            mid_nodes, marked_ele, self.blue_marked_neighbor, nodes_where_longest
         )
 
     def blue_pattern_two_neighbor(self, longest_edge, ele_two_neighbor):
@@ -1005,12 +930,12 @@ class AMR(marking_ele):
         )
 
     def create_blue_pattern_one_neighbor(
-            self, one_neighbor, ele, neighbor, nodes_where_longest
+        self, mid_nodes, ele, neighbor, nodes_where_longest
     ):
         """
         This function creates the blue pattern for elements which have one or two neighbors.
 
-        @param one_neighbor:
+        @param mid_nodes:
         @param ele:
         @param neighbor:
         @param nodes_where_longest:
@@ -1022,41 +947,38 @@ class AMR(marking_ele):
             keep_node,
             index,
             keep_node_index,
-            node_to_close_element,
+            vertex_node,
             node_rotation,
         ) = AMR.keep_rotation_direction(nodes_neighbor, nodes, nodes_where_longest, ele)
         keep_node = keep_node
-        node_to_close_element = node_to_close_element
-        for count, row_nodes in enumerate(zip(node_rotation, one_neighbor)):
-            if node_to_close_element[count] == row_nodes[0][0]:
+        for count, (nr, mn) in enumerate(zip(node_rotation, mid_nodes)):
+            if vertex_node[count] == nr[0]:
                 self.blue_ele.append(
                     np.array(
                         (
                             keep_node[count],
-                            node_to_close_element[count],
-                            row_nodes[1][1],
+                            vertex_node[count],
+                            mn[1],
                         )
                     )
                 )
+                self.blue_ele.append(np.array((mn[1], nr[1], mn[0])))
+                self.blue_ele.append(np.array((mn[0], keep_node[count], mn[1])))
             else:
                 self.blue_ele.append(
                     np.array(
                         (
                             keep_node[count],
-                            row_nodes[1][1],
-                            node_to_close_element[count],
+                            mn[1],
+                            vertex_node[count],
                         )
                     )
                 )
-            self.blue_ele.append(
-                np.array((row_nodes[1][0], row_nodes[1][1], row_nodes[0][0]))
-            )
-            self.blue_ele.append(
-                np.array((row_nodes[0][1], row_nodes[1][1], row_nodes[1][0]))
-            )
+                self.blue_ele.append(np.array((mn[1], mn[0], nr[0])))
+                self.blue_ele.append(np.array((mn[0], mn[1], keep_node[count])))
 
     def create_blue_pattern_two_neighbor(
-            self, two_neighbor, ele, nodes_along_second_neighbor, mid_node_with_le
+        self, two_neighbor, ele, nodes_along_second_neighbor, mid_node_with_le
     ):
         """
         This function creates the blue pattern for elements which have one or two neighbors.
@@ -1068,8 +990,8 @@ class AMR(marking_ele):
         """
 
         nodes = self.ele_undeformed[ele, 0:3]
-        neighbor_one = nodes_along_second_neighbor[0: len(ele) * 2: 2]
-        neighbor_two = nodes_along_second_neighbor[1: len(ele) * 2: 2]
+        neighbor_one = nodes_along_second_neighbor[0 : len(ele) * 2 : 2]
+        neighbor_two = nodes_along_second_neighbor[1 : len(ele) * 2 : 2]
 
         (
             unmarked_edge,
@@ -1081,7 +1003,7 @@ class AMR(marking_ele):
         )
 
         for count, (node_to_close, vertex_node) in enumerate(
-                zip(node_to_close, vertex_node)
+            zip(node_to_close, vertex_node)
         ):
             self.blue_ele.append(
                 np.array(
@@ -1138,7 +1060,9 @@ class AMR(marking_ele):
         self.red_pattern(mid_node_coors, self.for_red_ref)
         self.green_pattern(nodes_where_longest, self.for_green_ref)
         self.blue_pattern_one_neighbor(
-            self.for_blue_ref_one_neighbor, nodes_where_longest
+            self.for_blue_ref_one_neighbor,
+            self.blue_marked_neighbor,
+            nodes_where_longest,
         )
 
         self.blue_pattern_two_neighbor(
