@@ -20,7 +20,7 @@ class BSimAmr:
         Check if the path Variable is a string. If not print out an error message. Otherwise assign the path
         string to the classes instance bcs_file_name"
 
-        @param path_str:
+        @param path:
         @return:
         """
         if not isinstance(path, str):
@@ -37,7 +37,13 @@ class BSimAmr:
         if not isinstance(out_path, str):
             raise TypeError("Path not defined as a string")
         elif not out_path.endswith("/out"):
-            raise FileNotFoundError("Path not defined as a string")
+            try:
+                if not os.path.exists(out_path + '/out'):
+                    os.mkdir(out_path + '/' + 'out')
+                self.__out_path = out_path + '/' + 'out'
+            except PermissionError:
+                print("Could not create an out folder")
+                raise
         else:
             self.__out_path = out_path
 
