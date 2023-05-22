@@ -32,13 +32,11 @@ class marking_ele(bcs_read):
         @return: diff_calc
         """
         y, x = self.ele_deformed[:, 3], self.ele_undeformed[:, 3]
-        diff_calc = []
-        for ele in range(len(self.ele_undeformed)):
-            diff_calc.append(
-                np.abs(
-                    ((y[ele] - x[ele]) / y[ele]) * 100)
+        diff_calc = np.asarray(
+            np.abs(
+                (y-x)/y * 100
             )
-        diff_calc = np.asarray(diff_calc)
+        )
 
         return diff_calc
 
