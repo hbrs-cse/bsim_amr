@@ -1,12 +1,11 @@
 from bcs_write import write_file
-from tests import test_bsim_amr
 
 import cProfile
 import io
 import pstats
 
 path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
-out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out/Vierkant/out"
+out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out/Vierkant"
 thickness = 70
 
 
@@ -31,5 +30,4 @@ def get_pstats():
 if __name__ == '__main__':
     write_bcs = write_file(path, out_path, thickness)
     write_bcs.run_main()
-
-    get_pstats()
+    #get_pstats()

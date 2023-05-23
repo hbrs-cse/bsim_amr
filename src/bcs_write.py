@@ -10,8 +10,6 @@ class write_file (AMR):
     def __init__(self, path, out_path, thickness):
         super().__init__(path, out_path, thickness)
 
-        self._out_path = out_path
-        self.file_name = None
 
     def run_amr(self):
         """

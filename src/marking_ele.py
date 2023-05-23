@@ -32,6 +32,7 @@ class marking_ele(bcs_read):
         @return: diff_calc
         """
         y, x = self.ele_deformed[:, 3], self.ele_undeformed[:, 3]
+
         diff_calc = np.asarray(
             np.abs(
                 (y - x) / y
@@ -44,7 +45,6 @@ class marking_ele(bcs_read):
         """
         Marks all elements whose thickness difference is in a sepcific range.
         """
-
         arg_list = np.where((thickness_diff > self.thickness) & (thickness_diff < 80))
 
         ele_list = [arg_list[0].tolist()]
