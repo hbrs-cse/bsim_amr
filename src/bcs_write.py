@@ -26,9 +26,6 @@ class write_file (AMR):
         refined elements the same. Delete the elements from the mesh which are marked
         """
 
-        blue_elements_one = self.ele_undeformed[
-                            self.for_blue_ref_one_neighbor, 3::
-                            ]
         blue_elements_two = self.ele_undeformed[
                             self.for_blue_ref_two_neighbor, 3::
                             ]
@@ -45,14 +42,10 @@ class write_file (AMR):
         thickness_temp_green = np.repeat(
             green_elements, 2, axis=0
         )
-        thickness_temp_blue_one = np.repeat(
-            blue_elements_one, 3, axis=0
-        )
         thickness_temp_blue_two = np.repeat(
             blue_elements_two, 3, axis=0
         )
-        thickness_temp_blue = thickness_temp_blue_one.tolist() +\
-                              thickness_temp_blue_two.tolist()
+        thickness_temp_blue = thickness_temp_blue_two.tolist()
 
         self.green_ele, self.red_ele = np.asarray(
             self.green_ele
@@ -71,7 +64,6 @@ class write_file (AMR):
         self.ele_undeformed = np.delete(self.ele_undeformed,
                                         [self.for_red_ref +
                                          self.for_green_ref +
-                                         self.for_blue_ref_one_neighbor +
                                          self.for_blue_ref_two_neighbor
                                          ],
                                         axis=0
