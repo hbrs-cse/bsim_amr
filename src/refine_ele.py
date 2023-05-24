@@ -386,7 +386,7 @@ class AMR(marking_ele):
                             match_blue = np.where(
                                 (long_ele[:, 1::] == longest_edge[::-1]).all(axis=1)
                             )[0]
-                            """
+
                             if long_ele[match_blue, 0] in self.for_green_ref:
                                 print('green')
                                 indice = self.for_green_ref.index(long_ele[match_blue, 0])
@@ -407,7 +407,11 @@ class AMR(marking_ele):
                                 del self.blue_marked_neighbor[indice]
                                 self.for_red_ref.append(long_ele[match_blue, 0][0])
 
-                            """
+                            else:
+                                hanging_edges = np.append(hanging_edges,
+                                                          [longest_edge],
+                                                          axis=0
+                                                          )
 
                             self.for_blue_ref_one_neighbor.append(ele_num[idx])
                             if ele_num[idx] not in blue_marked_ele:
@@ -421,10 +425,7 @@ class AMR(marking_ele):
 
                             )
 
-                            hanging_edges = np.append(hanging_edges,
-                                                      [longest_edge],
-                                                      axis=0
-                                                      )
+
             print('Hanging edges', len(hanging_edges))
             self.all_marked_elements()
             iteration = len(hanging_edges)
@@ -1072,11 +1073,11 @@ class AMR(marking_ele):
 
         self.red_pattern(mid_node_coors, self.for_red_ref)
         self.green_pattern(nodes_where_longest, self.for_green_ref)
-        #self.blue_pattern_one_neighbor(
-        #    self.for_blue_ref_one_neighbor,
-        #    self.blue_marked_neighbor,
-        #    nodes_where_longest,
-        #)
+        self.blue_pattern_one_neighbor(
+            self.for_blue_ref_one_neighbor,
+            self.blue_marked_neighbor,
+            nodes_where_longest,
+        )
 
         self.blue_pattern_two_neighbor(
             nodes_where_longest, self.for_blue_ref_two_neighbor
