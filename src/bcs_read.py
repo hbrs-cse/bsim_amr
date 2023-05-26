@@ -175,7 +175,7 @@ class bcs_read(BSimAmr):
                 nrows=bc_index + (bc_index - bc_begin_index)
             ).to_numpy()
         else:
-            self.bc = None
+            self.bc = []
 
     def run_reading(self):
         """

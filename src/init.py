@@ -6,7 +6,7 @@ import pstats
 
 path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
 out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out/Vierkant"
-thickness = 70
+thickness = 50
 
 
 def get_pstats():

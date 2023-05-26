@@ -45,7 +45,7 @@ class marking_ele(bcs_read):
         """
         Marks all elements whose thickness difference is in a sepcific range.
         """
-        arg_list = np.where((thickness_diff > self.thickness) & (thickness_diff < 80))
+        arg_list = np.where((thickness_diff > self.thickness) & (thickness_diff < 60))
 
         ele_list = [arg_list[0].tolist()]
         for sublist in ele_list:
