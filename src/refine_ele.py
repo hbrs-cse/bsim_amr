@@ -261,36 +261,81 @@ class AMR(marking_ele):
 
     def get_ele_dictionary(self, hanging_edges, all_edges, nodes_where_longest):
 
-        ele_dict = {}
-        ele_num = 0
+
+        """
         for i, edge in enumerate(all_edges[:, 1::]):
             element_val = tuple(sorted(edge))
 
+            if i == 167:
+                pass
+            if element_val[::-1] in ele_dict:
+                ele_dict[element_val[::-1]]["Edge"].append(element_val)
+                ele_dict[element_val[::-1]]["Ele_number"].append(ele_num)
+                ele_dict[element_val[::-1]]["Longest_edge_neighbor"] = nodes_where_longest[i]
+
             if element_val not in ele_dict:
-                ele_dict[element_val] = {"Edge": element_val,
-                                         "Ele_number": ele_num,
+
+                ele_dict[element_val] = {"Edge": [element_val],
+                                         "Ele_number": [ele_num],
                                          "Marked": False,
                                          "Stop_blue": False,
-                                         "Neighbor_num": False
+                                         "Longest_edge": tuple(),
+                                         "Longest_edge_neighbor": tuple()
                                          }
+            else :
+                ele_dict[element_val]["Edge"].append(element_val)
+                ele_dict[element_val]["Ele_number"].append(ele_num)
+                ele_dict[element_val]["Longest_edge"] = nodes_where_longest[i]
 
+            """
+        ele_dict = {}
+        ele_num = 0
+        fit_longest_edge = np.repeat(nodes_where_longest, 3, axis=0)
+
+        all_edges_dict = {tuple(edge[1:]): edge[0] for edge in all_edges}
+        for i, edge in enumerate(all_edges[:, 1:]):
+            element_val = tuple(edge)
+            element_val_reverse = tuple(element_val[::-1])
+
+            if element_val not in ele_dict:
+                if element_val_reverse not in ele_dict:
+                    ele_dict[element_val] = {"Edge": element_val,
+                                             "Ele_number": [ele_num],  # Store Ele_number as a list
+                                             "Marked": False,
+                                             "Stop_blue": False,
+                                             "Longest_edge": tuple(fit_longest_edge[i]),
+                                             "Neighbor_longest_edge": tuple()
+                                             }
+
+                    if element_val_reverse in all_edges_dict:
+                        index = all_edges_dict[element_val_reverse]
+                        ele_dict[element_val]["Ele_number"].append(index)
+                        ele_dict[element_val]["Neighbor_longest_edge"] = nodes_where_longest[index]
+
+# Append Ele_number to the existing list
+                # Append Ele_number to the existing list
             if (i + 1) % 3 == 0:
                 ele_num += 1
 
-        all_mesh_edges = AMR.get_all_edges(self.ele_undeformed[:, 0:3])
-        stacked_edges = AMR.create_stacked_edges_array(all_mesh_edges)
-        edge_dict = {}
-        for idx, (edges, longest_edge) in enumerate(zip(stacked_edges, nodes_where_longest)):
-            edge_dict[idx] = {"Edges": edges,
-                              "Longest_edge": tuple(sorted(longest_edge))
-                              }
+
+
+            #if element_val_reverse in
+
+
+        #all_mesh_edges = AMR.get_all_edges(self.ele_undeformed[:, 0:3])
+        #stacked_edges = AMR.create_stacked_edges_array(all_mesh_edges)
+        #edge_dict = {}
+        #for idx, (edges, longest_edge) in enumerate(zip(stacked_edges, nodes_where_longest)):
+        #    edge_dict[idx] = {"Edges": edges,
+        #                      "Longest_edge": tuple(sorted(longest_edge))
+        #                      }
 
 
         for marked_lst in hanging_edges[:, 1::]:
             marked_lst = tuple(marked_lst)
             if marked_lst in ele_dict:
                 ele_dict[marked_lst]["Marked"] = True
-        return ele_dict, edge_dict
+        return ele_dict
 
     def get_neighbor_along_edge(self, ele_dict, all_edges):
 
@@ -301,6 +346,7 @@ class AMR(marking_ele):
             )[0]
 
             for iterate, neighbor_match in enumerate(index):
+                print(all_edges[neighbor_match, 0])
                 if all_edges[neighbor_match, 0] != edge_index[0]:
                     if edge in ele_dict:
                         ele_dict[edge]["Neighbor_num"] = all_edges[index[iterate], 0]
@@ -1148,7 +1194,7 @@ class AMR(marking_ele):
         """
         hanging_edges = self.long_stacked_edges_array(marked_edges)
         ele_dict, edge_dict = self.get_ele_dictionary(hanging_edges, all_edges, nodes_where_longest)
-        ele_dict = self.get_neighbor_along_edge(ele_dict, all_edges)
+        #ele_dict = self.get_neighbor_along_edge(ele_dict, all_edges)
         marked_dict = self.elements_to_refine(ele_dict, edge_dict, nodes_where_longest, all_edges, hanging_edges)
         self.get_marked_neighbor(ele_dict, marked_dict)
         mid_node_dict = self.get_new_mid_nodes(ele_dict, marked_dict)
