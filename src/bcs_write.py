@@ -26,9 +26,9 @@ class write_file (AMR):
         refined elements the same. Delete the elements from the mesh which are marked
         """
 
-        #blue_elements_one = self.ele_undeformed[
-        #                    self.for_blue_ref_one_neighbor, 3::
-        #                    ]
+        blue_elements_one = self.ele_undeformed[
+                            self.for_blue_ref_one_neighbor, 3::
+                            ]
         #blue_elements_two = self.ele_undeformed[
         #                    self.for_blue_ref_two_neighbor, 3::
         #                    ]
@@ -45,13 +45,13 @@ class write_file (AMR):
         thickness_temp_green = np.repeat(
             green_elements, 2, axis=0
         )
-        #thickness_temp_blue_one = np.repeat(
-        #    blue_elements_one, 3, axis=0
-        #)
+        thickness_temp_blue_one = np.repeat(
+            blue_elements_one, 3, axis=0
+        )
         #thickness_temp_blue_two = np.repeat(
         #    blue_elements_two, 3, axis=0
         #)
-        #thickness_temp_blue = thickness_temp_blue_one.tolist() #+\
+        thickness_temp_blue = thickness_temp_blue_one.tolist() #+\
                               #thickness_temp_blue_two.tolist()
 
         #self.green_ele, self.red_ele = np.asarray(
@@ -64,9 +64,9 @@ class write_file (AMR):
         complete_green_cluster = np.hstack(
             (self.green_ele, thickness_temp_green)
         )
-        #complete_blue_cluster = np.hstack(
-        #    (self.blue_ele, thickness_temp_blue)
-        #)
+        complete_blue_cluster = np.hstack(
+            (self.blue_ele, thickness_temp_blue)
+        )
 
         """
         self.ele_undeformed = np.delete(self.ele_undeformed,
@@ -85,8 +85,8 @@ class write_file (AMR):
             np.concatenate(
                 (
                     complete_red_cluster,
-                    complete_green_cluster),
-                    #complete_blue_cluster),
+                    complete_green_cluster,
+                    complete_blue_cluster),
                 axis=0
             ),
             axis=0
