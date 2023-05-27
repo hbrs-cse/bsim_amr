@@ -122,6 +122,7 @@ class bcs_read(BSimAmr):
             ele_data_container[1],
         )
 
+
     def read_mesh(self):
         """
         This function returns the same dataframe as the function before but the deformed .bcs-file is used.

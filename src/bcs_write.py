@@ -32,9 +32,9 @@ class write_file (AMR):
         #blue_elements_two = self.ele_undeformed[
         #                    self.for_blue_ref_two_neighbor, 3::
         #                    ]
-        #green_elements = self.ele_undeformed[
-        #                 self.for_green_ref, 3::
-        #                 ]
+        green_elements = self.ele_undeformed[
+                         self.for_green_ref, 3::
+                         ]
         red_elements = self.ele_undeformed[
                        self.for_red_ref, 3::
                        ]
@@ -42,9 +42,9 @@ class write_file (AMR):
         thickness_temp_red = np.repeat(
             red_elements, 4, axis=0
         )
-        #thickness_temp_green = np.repeat(
-        #    green_elements, 2, axis=0
-        #)
+        thickness_temp_green = np.repeat(
+            green_elements, 2, axis=0
+        )
         #thickness_temp_blue_one = np.repeat(
         #    blue_elements_one, 3, axis=0
         #)
@@ -61,34 +61,34 @@ class write_file (AMR):
         complete_red_cluster = np.hstack(
             (self.red_ele, thickness_temp_red)
         )
-        #complete_green_cluster = np.hstack(
-        #    (self.green_ele, thickness_temp_green)
-        #)
+        complete_green_cluster = np.hstack(
+            (self.green_ele, thickness_temp_green)
+        )
         #complete_blue_cluster = np.hstack(
         #    (self.blue_ele, thickness_temp_blue)
         #)
 
-
+        """
         self.ele_undeformed = np.delete(self.ele_undeformed,
-                                        self.for_red_ref[:5], #+
-                                         #self.for_green_ref +
+                                        self.for_red_ref +
+                                         self.for_green_ref,
                                          #self.for_blue_ref_one_neighbor #+
                                          #self.for_blue_ref_two_neighbor
 
                                         axis=0
                                         )
-
+        """
 
         self.ele_undeformed = np.insert(
             self.ele_undeformed,
             0,
-            #np.concatenate(
-                #(
+            np.concatenate(
+                (
                     complete_red_cluster,
-                   #complete_green_cluster,
+                    complete_green_cluster),
                     #complete_blue_cluster),
-                #axis=0
-            #),
+                axis=0
+            ),
             axis=0
         )
 
@@ -101,6 +101,7 @@ class write_file (AMR):
         complete_mesh_cluster = np.hstack(
             (self.bcs_mesh, np.zeros((len(self.bcs_mesh), 2), dtype=np.int))
         )
+
         self.mesh_undeformed = np.append(
             self.mesh_undeformed, complete_mesh_cluster, axis=0
         )
