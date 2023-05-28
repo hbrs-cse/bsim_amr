@@ -28,12 +28,9 @@ class AMR(marking_ele):
 
         self.for_red_ref = []
         self.for_green_ref = []
-        self.for_blue_ref_one_neighbor = []
-        self.for_blue_ref_two_neighbor = []
+        self.for_blue_ref= []
         self.green_marked_neighbor = []
         self.blue_marked_neighbor = []
-        self.two_blue_marked_neighbor = []
-        self.nodes_along_second_neighbor = []
 
         self.red_ele = []
         self.green_ele = []
@@ -282,7 +279,6 @@ class AMR(marking_ele):
                 ele_dict[element_val] = {"Edge": element_val,
                                          "Ele_num": ele_num,
                                          "Marked": False,
-                                         "Stop": False
                                          }
             if element_val not in longest_edge_dict:
                 longest_edge_dict[element_val] = {"Longest_edge": fit_longest_edge[i]}
@@ -324,22 +320,35 @@ class AMR(marking_ele):
         @return:
         """
 
-        for edges, dict_val in ele_dict.items():
-            if dict_val["Marked"]:
-                longest_edge = tuple(longest_edge_dict[edges]["Longest_edge"])
+        for edges in hanging_edges[:, 1::]:
+            edges = tuple(edges)
+            reversed_edge = tuple(reversed(edges))
+            if reversed_edge in ele_dict:
+                ele_dict[reversed_edge]["Marked"] = True
+                longest_edge = tuple(longest_edge_dict[reversed_edge]["Longest_edge"])
+                if np.isin(edges, (3,86)).all():
+                    pass
+                if np.isin(longest_edge, (3,86)).all():
+                    pass
+                if np.isin(longest_edge, (3,86)).all():
+                    pass
                 adjacent_edge = edges
                 if longest_edge:
                     while True:
                         if np.isin(adjacent_edge, longest_edge).all():
                             break
                         if not ele_dict[longest_edge]["Marked"]:
-                            adjacent_edge = longest_edge
-                            ele_dict[adjacent_edge]["Marked"] = True
-                            neighbor_edge = tuple(reversed(adjacent_edge))
-                            if neighbor_edge in longest_edge_dict:
-                                longest_edge = tuple(longest_edge_dict[neighbor_edge]["Longest_edge"])
+                            ele_dict[longest_edge]["Marked"] = True
+                            adjacent_edge = tuple(reversed(longest_edge))
+                            if adjacent_edge in ele_dict:
+                                ele_dict[adjacent_edge]["Marked"] = True
+                            if adjacent_edge in longest_edge_dict:
+                                longest_edge = tuple(longest_edge_dict[adjacent_edge]["Longest_edge"])
+                                if np.isin(longest_edge, (3,86)).all():
+                                    pass
+                                if np.isin(longest_edge, (3,86)).all():
+                                    pass
                         else:
-                            ele_dict[longest_edge]["Stop"] = True
                             break
 
         marked_dict = {}
@@ -347,36 +356,22 @@ class AMR(marking_ele):
             ele_number = val["Ele_num"]
             marked = val["Marked"]
             edge = val["Edge"]
-            stop = val["Stop"]
             if ele_number not in marked_dict:
                 marked_dict[ele_number] = {"Ele_num": ele_number,
                                            "Count": 0,
                                            "Green_mark": False,
-                                           "Blue_mark_one": False,
-                                           "Blue_mark_two": False,
                                            "Red_mark": False,
-                                           "Edge": [],
-                                           "Stop": stop
+                                           "Blue_mark": False,
+                                           "Edge": []
                                         }
 
             if marked:
                 marked_dict[ele_number]["Edge"].append(edge)
                 marked_dict[ele_number]["Count"] += 1
-                marked_dict[ele_number]["Stop"] = stop
-
-        for _, val in marked_dict.items():
-            if val["Count"] == 2:
-                marked_number = val["Ele_num"]
-                stop_blue = val["Stop"]
-                if not stop_blue:
-                    marked_dict[marked_number]["Blue_mark_one"] = True
-                else:
-                    marked_dict[marked_number]["Blue_mark_two"] = True
 
         for _, val in marked_dict.items():
             count = val["Count"]
             ele_num = val["Ele_num"]
-            two_neighbor = val["Blue_mark_two"]
 
             if count == 1:
                 self.for_green_ref.append(
@@ -384,15 +379,10 @@ class AMR(marking_ele):
                 )
                 marked_dict[ele_num]["Green_mark"] = True
             if count == 2:
-                if two_neighbor:
-                    self.for_blue_ref_two_neighbor.append(
-                        ele_num
-                    )
-                else:
-                    self.for_blue_ref_one_neighbor.append(
-                        ele_num
-                    )
-                    marked_dict[ele_num]["Blue_mark_one"] = True
+                self.for_blue_ref.append(
+                    ele_num
+                )
+                marked_dict[ele_num]["Blue_mark"] = True
 
             if count == 3:
                 self.for_red_ref.append(
@@ -420,8 +410,6 @@ class AMR(marking_ele):
 
         for key, val in marked_dict.items():
             count = val["Count"]
-            blue_edge = val["Blue_mark_one"]
-            blue_edge_two = val["Blue_mark_two"]
             edges = val["Edge"]
 
             if count and count < 3:
@@ -439,17 +427,11 @@ class AMR(marking_ele):
 
                 if count == 2:
                     if neighbor[0] and neighbor[1] in ele_dict:
-                        if blue_edge:
-                            self.blue_marked_neighbor.append(
-                                [ele_dict[neighbor[0]]["Ele_num"],
-                                 ele_dict[neighbor[1]]["Ele_num"]]
-                            )
-                        elif blue_edge_two:
-                            self.two_blue_marked_neighbor.append(
-                                [ele_dict[neighbor[0]]["Ele_num"],
-                                 ele_dict[neighbor[1]]["Ele_num"]]
-                            )
-        self.two_blue_marked_neighbor = np.asarray(self.two_blue_marked_neighbor)
+                        self.blue_marked_neighbor.append(
+                            [ele_dict[neighbor[0]]["Ele_num"],
+                             ele_dict[neighbor[1]]["Ele_num"]]
+                        )
+        self.blue_marked_neighbor= np.asarray(self.blue_marked_neighbor)
 
     def get_new_mid_nodes(self, ele_dict, marked_dict, longest_edge_dict):
         """
@@ -466,23 +448,21 @@ class AMR(marking_ele):
             edges = val["Edge"]
             count = val["Count"]
             ele_num = val["Ele_num"]
-            blue_mark = val["Blue_mark_one"]
 
             if edges:
                 longest_edge = longest_edge_dict[edges[0]]["Longest_edge"]
-            if count == 2 or count == 3:
-                for edge in edges:
-                    edge = tuple(sorted(edge))
-                    if count == 3:
-                        if edge not in mid_node_dict:
-                            mid_node_coor, node_num = self.calculate_mid_nodes(edge, node_num)
-                            mid_node_dict[edge] = {"Mid_nodes": node_num,
-                                                   "Coordinates": tuple(mid_node_coor),
-                                                   "Ele_num": ele_num,
-                                                   }
+                if count == 2 or count == 3:
+                    for edge in edges:
+                        edge = tuple(sorted(edge))
+                        if count == 3:
+                            if edge not in mid_node_dict:
+                                mid_node_coor, node_num = self.calculate_mid_nodes(edge, node_num)
+                                mid_node_dict[edge] = {"Mid_nodes": node_num,
+                                                       "Coordinates": tuple(mid_node_coor),
+                                                       "Ele_num": ele_num,
+                                                       }
 
-                    if count == 2:
-                        if blue_mark:
+                        if count == 2:
                             if np.isin(longest_edge, edge).all():
                                 if edge not in mid_node_dict:
                                     mid_node_coor, node_num = self.calculate_mid_nodes(edge, node_num)
@@ -491,7 +471,7 @@ class AMR(marking_ele):
                                                            "Ele_num": ele_num,
                                                            }
 
-        self.bcs_mesh = [entry['Coordinates'] for entry in mid_node_dict.values()]
+            self.bcs_mesh = [entry['Coordinates'] for entry in mid_node_dict.values()]
         return mid_node_dict
 
     def assign_mid_nodes(self, mid_node_dict, ele_dict, marked_dict, longest_edge_dict):
@@ -506,13 +486,14 @@ class AMR(marking_ele):
 
         green_dict = {key: value for key, value in marked_dict.items() if value["Green_mark"]}
         red_dict = {key: value for key, value in marked_dict.items() if value["Red_mark"]}
-        blue_dict = {key: value for key, value in marked_dict.items() if
-                     value["Blue_mark_one"] or value["Blue_mark_two"]}
+        blue_dict = {key: value for key, value in marked_dict.items() if value["Blue_mark"]}
+
 
         for _, row in green_dict.items():
-            green_edges = tuple(sorted(row["Edge"][0]))
+            edges = tuple(row["Edge"][0])
             ele_num = row["Ele_num"]
-            longest_edge = longest_edge_dict[green_edges]["Longest_edge"]
+            longest_edge = tuple(sorted(longest_edge_dict[edges]["Longest_edge"]))
+            green_edges = tuple(sorted(edges))
 
             if ele_num not in self.green_mid_nodes:
                 self.green_mid_nodes[ele_num] = {"Mid_node": mid_node_dict[green_edges]["Mid_nodes"],
@@ -521,11 +502,12 @@ class AMR(marking_ele):
                                                  "Longest_edge": longest_edge
                                                  }
 
+
         for _, row in red_dict.items():
             red_edges = row["Edge"]
             ele_num = row["Ele_num"]
 
-            red_edges = [tuple(sorted(edge)) for edge in red_edge]
+            red_edges = [tuple(sorted(edge)) for edge in red_edges]
 
             if ele_num not in self.red_mid_nodes:
                 self.red_mid_nodes[ele_num] = {"Mid_node": [mid_node_dict[red_edges[0]]["Mid_nodes"],
@@ -539,20 +521,17 @@ class AMR(marking_ele):
         for _, row in blue_dict.items():
             blue_edges = row["Edge"]
             ele_num = row["Ele_num"]
-            one_neighbor = row["Blue_mark_one"]
-            two_neighbor = row["Blue_mark_two"]
-            blue_edges = [tuple(sorted(edge)) for edge in blue_edges]
+            blue_edges = [tuple(edge) for edge in blue_edges]
 
-            longest_edge = tuple(longest_edge_dict[blue_edges[0]]["Longest_edge"])
-            not_longest_edge = [lst for lst in blue_edges if lst != longest_edge][0]
+            longest_edge = tuple(sorted(longest_edge_dict[blue_edges[0]]["Longest_edge"]))
+            not_longest_edge = tuple(sorted([lst for lst in blue_edges if lst != longest_edge][0]))
 
             self.blue_mid_nodes[ele_num] = {"Mid_node": [mid_node_dict[longest_edge]["Mid_nodes"],
                                                          mid_node_dict[not_longest_edge]["Mid_nodes"]],
-                                            "Blue_mark_one": one_neighbor,
-                                            "Blue_mark_two": two_neighbor,
                                             "Edges": blue_edges,
                                             "Longest_edge": longest_edge
                                             }
+        print("j")
 
 
     def calculate_mid_nodes(self, edge, node_num):
@@ -912,8 +891,8 @@ class AMR(marking_ele):
         mid_node = [entry["Mid_node"] for entry in self.green_mid_nodes.values()]
         nodes_where_longest = [entry["Longest_edge"] for entry in self.green_mid_nodes.values()]
 
-        nodes = np.add(self.nodes_array(ele), 1)
-        nodes_neighbor = np.add(self.nodes_array(self.green_marked_neighbor), 1)
+        nodes = self.nodes_array(ele)
+        nodes_neighbor = self.nodes_array(self.green_marked_neighbor)
         keep_node, _, _, _, nodes_longest_edge = AMR.keep_rotation_direction(
             nodes_neighbor, nodes, nodes_where_longest
         )
@@ -1150,7 +1129,7 @@ class AMR(marking_ele):
         """
 
         self.red_pattern(self.for_red_ref)
-        #self.green_pattern(self.for_green_ref)
+        self.green_pattern(self.for_green_ref)
         #self.blue_pattern_one_neighbor(
         #    self.for_blue_ref_one_neighbor,
         #    nodes_where_longest
