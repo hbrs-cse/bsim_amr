@@ -2,14 +2,14 @@ import numpy as np
 import os
 from refine_ele import AMR
 
-class write_file (AMR):
+
+class write_file(AMR):
     """
     Class for writing .bcs-files
     """
 
     def __init__(self, path, out_path, thickness):
         super().__init__(path, out_path, thickness)
-
 
     def run_amr(self):
         """
@@ -19,19 +19,15 @@ class write_file (AMR):
         """
         super().main_amr()
 
-
     def manipulate_ele(self):
         """
         Update the old ndarray with the unrefined elements. Also keep thickness and temperature of the marked and
         refined elements the same. Delete the elements from the mesh which are marked
         """
 
-        #blue_elements_one = self.ele_undeformed[
-        #                    self.for_blue_ref_one_neighbor, 3::
-        #                    ]
-        #blue_elements_two = self.ele_undeformed[
-        #                    self.for_blue_ref_two_neighbor, 3::
-        #                    ]
+        blue_elements = self.ele_undeformed[
+                        self.for_blue_ref, 3::
+                        ]
         green_elements = self.ele_undeformed[
                          self.for_green_ref, 3::
                          ]
@@ -45,18 +41,9 @@ class write_file (AMR):
         thickness_temp_green = np.repeat(
             green_elements, 2, axis=0
         )
-        #thickness_temp_blue_one = np.repeat(
-        #    blue_elements_one, 3, axis=0
-        #)
-        #thickness_temp_blue_two = np.repeat(
-        #    blue_elements_two, 3, axis=0
-        #)
-        #thickness_temp_blue = thickness_temp_blue_one.tolist() #+\
-                              #thickness_temp_blue_two.tolist()
-
-        #self.green_ele, self.red_ele = np.asarray(
-        #    self.green_ele
-        #), np.asarray(self.red_ele)
+        thickness_temp_blue = np.repeat(
+            blue_elements, 3, axis=0
+        )
 
         complete_red_cluster = np.hstack(
             (self.red_ele, thickness_temp_red)
@@ -64,33 +51,33 @@ class write_file (AMR):
         complete_green_cluster = np.hstack(
             (self.green_ele, thickness_temp_green)
         )
-        #complete_blue_cluster = np.hstack(
-        #    (self.blue_ele, thickness_temp_blue)
-        #)
-
+        complete_blue_cluster = np.hstack(
+            (self.blue_ele, thickness_temp_blue)
+        )
 
         self.ele_undeformed = np.delete(self.ele_undeformed,
-                                         self.for_red_ref +
-                                         self.for_green_ref,
-                                         #self.for_blue_ref_one_neighbor #+
-                                         #self.for_blue_ref_two_neighbor
-
+                                        self.for_red_ref +
+                                        self.for_green_ref +
+                                        self.for_blue_ref,
                                         axis=0
                                         )
-
 
         self.ele_undeformed = np.insert(
             self.ele_undeformed,
             0,
             np.concatenate(
-                (
+                ([
                     complete_red_cluster,
-                    complete_green_cluster),
-                    #complete_blue_cluster),
-                axis=0
+                    complete_green_cluster,
+                    complete_blue_cluster
+                ]
+                ), axis=0
             ),
-            axis=0
+            axis=0,
         )
+
+
+
 
     def append_mesh(self):
         """
