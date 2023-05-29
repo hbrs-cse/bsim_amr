@@ -29,6 +29,8 @@ class bcs_read(BSimAmr):
         self.mesh_deformed = None
         self.bc = None
         self.coors = None
+        self.symmetry_assignement = None
+        self.plane_coordinates = None
 
     def get_path_undeformed(self):
         """ "
@@ -54,7 +56,7 @@ class bcs_read(BSimAmr):
 
         if list_bcs_undeformed:
             pass
-            print("File '{0}' will be read...".format(self.path_undef))
+            #print("\nFile '{}' will be read...".format(self.path_undef))
         else:
             raise ValueError("No .bcs-files found")
 
@@ -78,7 +80,7 @@ class bcs_read(BSimAmr):
 
         if list_bcs_deformed:
             pass
-            print("File '{0}' will be read...\n".format(self.path_def))
+            print("\nFile '{}' will be read...\n".format(self.path_def))
         else:
             raise ValueError("No .bcs-files found")
 
@@ -103,7 +105,8 @@ class bcs_read(BSimAmr):
                 for lines in bcs_file.readlines():
                     self.line.append(lines)
 
-            start = self.line.index("FULL\n")
+            self.symmetry_assignement = self.line[1]
+            start = self.line.index(self.symmetry_assignement)
             end = self.line.index("-111 1 1 1 1 1 1 END NOP\n")
 
             lines_to_keep = np.arange(start + 1, end)
@@ -121,7 +124,6 @@ class bcs_read(BSimAmr):
             ele_data_container[0],
             ele_data_container[1],
         )
-
 
     def read_mesh(self):
         """
@@ -151,7 +153,7 @@ class bcs_read(BSimAmr):
 
     def read_bc(self):
         """
-        Reads the .bcs-file
+        Reads the .bcs-files boundary conditions.
         """
 
         self.bc = np.array([])
@@ -159,7 +161,6 @@ class bcs_read(BSimAmr):
         bc_begin_index = self.line.index("-111 1 1 1 1 1 1 END OF COORS\n")
 
         if bc_index - bc_begin_index > 1:
-
             self.bc = pd.read_csv(
                 self.path_lib[0],
                 sep="\\s+",
@@ -173,10 +174,21 @@ class bcs_read(BSimAmr):
                 sep="\\s+",
                 engine="python",
                 skiprows=bc_begin_index + (bc_index - bc_begin_index),
-                nrows=bc_index + (bc_index - bc_begin_index)
+                nrows=bc_index + (bc_index - bc_begin_index),
             ).to_numpy()
         else:
             self.bc = []
+
+    def read_plane_def(self):
+        """
+        Reads the .bcs-file plane coordinate.
+
+        @return:
+        """
+        if self.line[-1] != ["-111 1 1 1 1 1 1 END OF BCs"]:
+            self.plane_coordinates = self.line[-1]
+        else:
+            self.plane_coordinates = []
 
     def run_reading(self):
         """
@@ -187,3 +199,4 @@ class bcs_read(BSimAmr):
         self.read_ele()
         self.read_mesh()
         self.read_bc()
+        self.read_plane_def()

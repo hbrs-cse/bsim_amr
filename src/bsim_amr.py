@@ -1,8 +1,8 @@
 import os
 
+
 class BSimAmr:
     def __init__(self, path, out_path, thickness):
-
         self.filepath = path
         self.out_path = out_path
         self.thickness = thickness
@@ -38,15 +38,14 @@ class BSimAmr:
             raise TypeError("Path not defined as a string")
         elif not out_path.endswith("/out"):
             try:
-                if not os.path.exists(out_path + '/out'):
-                    os.mkdir(out_path + '/' + 'out')
-                self.__out_path = out_path + '/' + 'out'
+                if not os.path.exists(out_path + "/out"):
+                    os.mkdir(out_path + "/" + "out")
+                self.__out_path = out_path + "/" + "out"
             except PermissionError:
                 print("Could not create an out folder")
                 raise
         else:
             self.__out_path = out_path
-
 
     @property
     def thickness(self):
@@ -62,4 +61,3 @@ class BSimAmr:
             raise ValueError("Wall thickness difference is too big")
         else:
             self.__thickness = thickness
-

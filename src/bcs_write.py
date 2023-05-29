@@ -10,6 +10,7 @@ class write_file(AMR):
 
     def __init__(self, path, out_path, thickness):
         super().__init__(path, out_path, thickness)
+        self.file_name = None
 
     def run_amr(self):
         """
@@ -25,59 +26,33 @@ class write_file(AMR):
         refined elements the same. Delete the elements from the mesh which are marked
         """
 
-        blue_elements = self.ele_undeformed[
-                        self.for_blue_ref, 3::
-                        ]
-        green_elements = self.ele_undeformed[
-                         self.for_green_ref, 3::
-                         ]
-        red_elements = self.ele_undeformed[
-                       self.for_red_ref, 3::
-                       ]
+        blue_elements = self.ele_undeformed[self.for_blue_ref, 3::]
+        green_elements = self.ele_undeformed[self.for_green_ref, 3::]
+        red_elements = self.ele_undeformed[self.for_red_ref, 3::]
 
-        thickness_temp_red = np.repeat(
-            red_elements, 4, axis=0
-        )
-        thickness_temp_green = np.repeat(
-            green_elements, 2, axis=0
-        )
-        thickness_temp_blue = np.repeat(
-            blue_elements, 3, axis=0
-        )
+        thickness_temp_red = np.repeat(red_elements, 4, axis=0)
+        thickness_temp_green = np.repeat(green_elements, 2, axis=0)
+        thickness_temp_blue = np.repeat(blue_elements, 3, axis=0)
 
-        complete_red_cluster = np.hstack(
-            (self.red_ele, thickness_temp_red)
-        )
-        complete_green_cluster = np.hstack(
-            (self.green_ele, thickness_temp_green)
-        )
-        complete_blue_cluster = np.hstack(
-            (self.blue_ele, thickness_temp_blue)
-        )
+        complete_red_cluster = np.hstack((self.red_ele, thickness_temp_red))
+        complete_green_cluster = np.hstack((self.green_ele, thickness_temp_green))
+        complete_blue_cluster = np.hstack((self.blue_ele, thickness_temp_blue))
 
-        self.ele_undeformed = np.delete(self.ele_undeformed,
-                                        self.for_red_ref +
-                                        self.for_green_ref +
-                                        self.for_blue_ref,
-                                        axis=0
-                                        )
+        self.ele_undeformed = np.delete(
+            self.ele_undeformed,
+            self.for_red_ref + self.for_green_ref + self.for_blue_ref,
+            axis=0,
+        )
 
         self.ele_undeformed = np.insert(
             self.ele_undeformed,
             0,
             np.concatenate(
-                ([
-                    complete_red_cluster,
-                    complete_green_cluster,
-                    complete_blue_cluster
-                ]
-                ), axis=0
+                ([complete_red_cluster, complete_green_cluster, complete_blue_cluster]),
+                axis=0,
             ),
             axis=0,
         )
-
-
-
 
     def append_mesh(self):
         """
@@ -104,11 +79,12 @@ class write_file(AMR):
         file_length_bc = len(self.bc)
         filtering = [
             "B-SIM - DATA OF THE SHEET\n",
-            "FULL\n",
+            self.symmetry_assignement + "\n",
             "-111 1 1 1 1 1 1 END NOP\n",
             "200.0  Char. dist\n",
             "-111 1 1 1 1 1 1 END OF COORS\n",
             "-111 1 1 1 1 1 1 END OF BCs\n",
+            self.plane_coordinates
         ]
         with open(os.path.join(self.out_path, self.file_name), "w") as bcs_amf:
             bcs_amf.write(filtering[0])
@@ -123,7 +99,6 @@ class write_file(AMR):
                         int(self.ele_undeformed[ele, 2]),
                         self.ele_undeformed[ele, 3],
                         self.ele_undeformed[ele, 4],
-
                     )
                 )
 
@@ -139,18 +114,21 @@ class write_file(AMR):
                         self.mesh_undeformed[ele, 2],
                         self.mesh_undeformed[ele, 3].astype(np.int),
                         self.mesh_undeformed[ele, 4].astype(np.int),
-
                     )
                 )
 
             bcs_amf.write(filtering[4])
             if file_length_bc:
                 for bc in range(file_length_bc):
-                    bcs_amf.write("{:5d}{:6d}\n".format(
-                        self.bc[bc, 0].astype(np.int), self.bc[bc, 1].astype(np.int)
-                    )
+                    bcs_amf.write(
+                        "{:5d}{:6d}\n".format(
+                            self.bc[bc, 0].astype(np.int), self.bc[bc, 1].astype(np.int)
+                        )
                     )
             bcs_amf.write(filtering[5])
+
+            if self.plane_coordinates:
+                bcs_amf.write(filtering[6])
 
     def check_success(self):
         """
@@ -169,6 +147,7 @@ class write_file(AMR):
         """
 
         self.run_amr()
+        #print("Writing new .bcs-file...")
         self.manipulate_ele()
         self.append_mesh()
         self.write_bcs()

@@ -33,11 +33,7 @@ class marking_ele(bcs_read):
         """
         y, x = self.ele_deformed[:, 3], self.ele_undeformed[:, 3]
 
-        diff_calc = np.asarray(
-            abs(
-                (y - x) / y
-            ) * 100
-        )
+        diff_calc = np.asarray(abs((y - x) / y) * 100)
 
         return diff_calc
 
@@ -47,8 +43,8 @@ class marking_ele(bcs_read):
         """
         arg_list = np.where((thickness_diff > self.thickness) & (thickness_diff < 80))
         arg_list = [lst for lst in arg_list[0] if lst > 600]
-        #ele_list = [arg_list.tolist()]
-        #for sublist in ele_list:
+        # ele_list = [arg_list.tolist()]
+        # for sublist in ele_list:
         for val in arg_list:
             self.ele_list.append(val)
             self.marked_ele.append(val)

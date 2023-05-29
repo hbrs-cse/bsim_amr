@@ -3,9 +3,12 @@ from bcs_write import write_file
 import cProfile
 import io
 import pstats
+import subprocess
 
-path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/*"
-out_path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out"
+path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
+out_path = (
+    r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out/Vierkant"
+)
 thickness = 50
 
 
@@ -19,15 +22,36 @@ def get_pstats():
     pr.enable()
     pr.disable()
     s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
+    ps = pstats.Stats(pr, stream=s).sort_stats("cumtime")
     ps.print_stats()
+    ps.dump_stats("C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/output.pstats")
 
-    with open('C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/perf_output.txt', 'w+'
-              ) as f:
+    with open(
+        "C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/perf_output.txt",
+        "w+",
+    ) as f:
         f.write(s.getvalue())
 
+    #args = ["python",
+    #        "-m",
+    #        "cProfile",
+     #       "-o",
+     #       "output.pstats",
+     #       "refine_ele.py",
+     ##       "gprof2dot.py",
+     #       "-f",
+     #       "pstats",
+     #       "output.pstats",
+     #       "|",
+     #       "dot",
+     #       "-Tpng",
+     #       "-o",
+     #       "dpi=300",
+     #       "bsim_gprof.png"]
+    #subprocess.run([""])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     write_bcs = write_file(path, out_path, thickness)
     write_bcs.run_main()
     #get_pstats()
