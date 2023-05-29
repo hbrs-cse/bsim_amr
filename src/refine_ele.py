@@ -427,6 +427,8 @@ class AMR(marking_ele):
 
                 if count == 2:
                     if neighbor[0] and neighbor[1] in ele_dict:
+                        print(ele_dict[neighbor[1]])
+                        #print(neighbor[0], count)
                         self.blue_marked_neighbor.append(
                             [ele_dict[neighbor[0]]["Ele_num"],
                              ele_dict[neighbor[1]]["Ele_num"]]
@@ -518,13 +520,17 @@ class AMR(marking_ele):
                                                "Edges": red_edges
                                                }
 
-        for _, row in blue_dict.items():
+        for index, (_, row) in enumerate(blue_dict.items()):
+            if index == 45:
+                pass
             blue_edges = row["Edge"]
             ele_num = row["Ele_num"]
             blue_edges = [tuple(edge) for edge in blue_edges]
 
             longest_edge = tuple(sorted(longest_edge_dict[blue_edges[0]]["Longest_edge"]))
-            not_longest_edge = tuple(sorted([lst for lst in blue_edges if lst != longest_edge][0]))
+            for edge in blue_edges:
+                if edge != longest_edge and tuple(reversed(edge)) != longest_edge:
+                    not_longest_edge = tuple(sorted(edge))
 
             self.blue_mid_nodes[ele_num] = {"Mid_node": [mid_node_dict[longest_edge]["Mid_nodes"],
                                                          mid_node_dict[not_longest_edge]["Mid_nodes"]],
@@ -772,11 +778,37 @@ class AMR(marking_ele):
         @return: rotation_direction, node_to_close, vertex_node
         """
 
-        unmarked_edge = []
         vertex_node = []
+        unmarked_edge = []
         free_node = []
-        keep_node_index = []
         marked_edge_connecting_node = []
+        marked_edge_connecting_node_index = []
+        index_differ = []
+        for row in range(len(nodes)):
+            unmarked_edge.append(
+                np.setxor1d(neighbor_one[row], neighbor_two[row]).astype(np.int)
+            )
+
+            marked_edge_connecting_node.append(np.setxor1d(unmarked_edge[row], nodes[row])[0])
+
+            marked_edge_connecting_node_index.append(
+                np.where(marked_edge_connecting_node[row] == nodes[row])[0][0]
+            )
+
+            vertex_node.append(
+                np.intersect1d(unmarked_edge[row], neighbor_one[row])[0]
+            )
+            free_node.append(np.intersect1d(neighbor_two[row], unmarked_edge[row])[0])
+
+        rotation_direction = self.nodes_rotation(marked_edge_connecting_node_index, nodes)
+
+        for idx, rotation in enumerate(rotation_direction):
+            index_differ.append(
+                np.where(rotation == vertex_node[idx])[0][0]
+            )
+
+
+        """
         for row in range(len(nodes)):
             #unmarked_edge.append(
             #    np.setxor1d(neighbor_one[row], neighbor_two[row]).astype(np.int)
@@ -792,8 +824,21 @@ class AMR(marking_ele):
                 np.setxor1d(neighbor_one[row], nodes[row])[0]
             )
 
-        index_differ = []
+            vertex_node_index.append(
+                np.where(nodes[row] == vertex_node[-1])[0]
+            )
+        nodes_rotation = AMR.nodes_rotation(vertex_node_index, nodes)
+
+        for idx, rotation in enumerate(nodes_rotation):
+            index_differ.append(
+                np.where(rotation == marked_edge_connecting_node[idx])[0]
+            )
+
+  
+        
         for (ele_node, le, nle) in zip(nodes, neighbor_one, neighbor_two):
+            if 516 in ele_node:
+                pass
             tuple_container = [tuple([ele_node[0], ele_node[1]]),
                                tuple([ele_node[1], ele_node[2]]),
                                tuple([ele_node[2], ele_node[0]])
@@ -801,9 +846,17 @@ class AMR(marking_ele):
             index_le = [index for index, item in enumerate(tuple_container) if np.isin(item, le).all()]
             index_nle = [index for index, item in enumerate(tuple_container) if np.isin(item, nle).all()]
 
-            index_differ.append(
-                [abs(x - y) for x, y in zip(index_le, index_nle)][0]
-            )
+            if index_le < index_nle:
+                index_differ.append(2)
+            else:
+                if index_le[0] == 1 and index_nle[0] == 2:
+                    index_le = [0]
+
+                index_differ.append(
+                    [abs(x - y) for x, y in zip(index_le, index_nle)][0]
+                )
+        
+        """
 
         return marked_edge_connecting_node, vertex_node, free_node, index_differ
 
@@ -928,7 +981,6 @@ class AMR(marking_ele):
                     not_longest_edge.append(edge)
 
         mid_nodes = [val["Mid_node"] for _, val in self.blue_mid_nodes.items()]
-        mid_node_with_le = [node[0] for node in mid_nodes]
 
         (
             marked_edge_connecting_node, vertex_node, free_node, index_differ
@@ -939,29 +991,32 @@ class AMR(marking_ele):
         for count, (cn, fn, vn, index_diff) in enumerate(
                 zip(marked_edge_connecting_node, free_node, vertex_node, index_differ)
         ):
-            if index_diff == 1:
-                self.blue_ele.append(
-                    np.array(
-                        (cn, mid_nodes[count][1], mid_nodes[count][0])
-                    )
-                )
-                self.blue_ele.append(
-                    np.array((mid_nodes[count][0], mid_nodes[count][1], vn))
-                )
-                self.blue_ele.append(
-                    np.array((fn, mid_nodes[count][0], vn))
-                )
-            else:
+            if count == 45:
+                pass
+
+            if not index_diff == 1:
                 self.blue_ele.append(
                     np.array(
                         (cn, mid_nodes[count][0], mid_nodes[count][1])
                     )
                 )
                 self.blue_ele.append(
-                    np.array((mid_nodes[count][0], vn, mid_nodes[count][1]))
+                    np.array((mid_nodes[count][1], mid_nodes[count][0], vn))
                 )
                 self.blue_ele.append(
-                    np.array((fn, vn, mid_nodes[count][0]))
+                    np.array((fn, mid_nodes[count][1], vn))
+                )
+            else:
+                self.blue_ele.append(
+                    np.array(
+                        (cn, mid_nodes[count][1], mid_nodes[count][0])
+                    )
+                )
+                self.blue_ele.append(
+                    np.array((mid_nodes[count][1], vn, mid_nodes[count][0]))
+                )
+                self.blue_ele.append(
+                    np.array((fn, vn, mid_nodes[count][1]))
                 )
 
     def get_longest_edge(self):

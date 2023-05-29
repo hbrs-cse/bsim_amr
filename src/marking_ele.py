@@ -34,7 +34,7 @@ class marking_ele(bcs_read):
         y, x = self.ele_deformed[:, 3], self.ele_undeformed[:, 3]
 
         diff_calc = np.asarray(
-            np.abs(
+            abs(
                 (y - x) / y
             ) * 100
         )
@@ -45,13 +45,13 @@ class marking_ele(bcs_read):
         """
         Marks all elements whose thickness difference is in a sepcific range.
         """
-        arg_list = np.where((thickness_diff > self.thickness) & (thickness_diff < 60))
-
-        ele_list = [arg_list[0].tolist()]
-        for sublist in ele_list:
-            for val in sublist:
-                self.ele_list.append(val)
-                self.marked_ele.append(val)
+        arg_list = np.where((thickness_diff > self.thickness) & (thickness_diff < 80))
+        arg_list = [lst for lst in arg_list[0] if lst > 600]
+        #ele_list = [arg_list.tolist()]
+        #for sublist in ele_list:
+        for val in arg_list:
+            self.ele_list.append(val)
+            self.marked_ele.append(val)
 
     def run_marking(self):
         """
