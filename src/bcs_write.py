@@ -79,7 +79,7 @@ class write_file(AMR):
         file_length_bc = len(self.bc)
         filtering = [
             "B-SIM - DATA OF THE SHEET\n",
-            self.symmetry_assignement + "\n",
+            self.symmetry_assignement,
             "-111 1 1 1 1 1 1 END NOP\n",
             "200.0  Char. dist\n",
             "-111 1 1 1 1 1 1 END OF COORS\n",
@@ -127,8 +127,8 @@ class write_file(AMR):
                     )
             bcs_amf.write(filtering[5])
 
-            if self.plane_coordinates:
-                bcs_amf.write(filtering[6])
+            #if self.plane_coordinates:
+            #    bcs_amf.write(filtering[6])
 
     def check_success(self):
         """

@@ -5,9 +5,9 @@ import io
 import pstats
 import subprocess
 
-path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
+path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/*"
 out_path = (
-    r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out/Vierkant"
+    r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out"
 )
 thickness = 50
 
@@ -31,25 +31,6 @@ def get_pstats():
         "w+",
     ) as f:
         f.write(s.getvalue())
-
-    #args = ["python",
-    #        "-m",
-    #        "cProfile",
-     #       "-o",
-     #       "output.pstats",
-     #       "refine_ele.py",
-     ##       "gprof2dot.py",
-     #       "-f",
-     #       "pstats",
-     #       "output.pstats",
-     #       "|",
-     #       "dot",
-     #       "-Tpng",
-     #       "-o",
-     #       "dpi=300",
-     #       "bsim_gprof.png"]
-    #subprocess.run([""])
-
 
 if __name__ == "__main__":
     write_bcs = write_file(path, out_path, thickness)

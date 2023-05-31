@@ -195,8 +195,8 @@ class AMR(marking_ele):
         nodes_where_longest = np.asarray(nodes_where_longest)
         return nodes_where_longest
 
-    @staticmethod
-    def get_ele_dictionary(hanging_edges, all_edges, nodes_where_longest):
+
+    def get_ele_dictionary(self, hanging_edges, all_edges, nodes_where_longest):
         """
         Creating a dictionary which stores the element edge end corresponding Element numbers. Set
         marked edges to true, otherwise false. A second dictionary stores the longest edge of each elements edge.
@@ -212,15 +212,9 @@ class AMR(marking_ele):
         ele_num = 0
         fit_longest_edge = np.repeat(nodes_where_longest, 3, axis=0)
 
-        for i, edge in enumerate(all_edges[:, 1:]):
-            element_val = tuple(edge)
+        for i, (_, edge) in enumerate(self.ele_dict.items()):
+            element_val = edge["Edge"]
 
-            if element_val not in ele_dict:
-                ele_dict[element_val] = {
-                    "Edge": element_val,
-                    "Ele_num": ele_num,
-                    "Marked": False,
-                }
             if element_val not in longest_edge_dict:
                 longest_edge_dict[element_val] = {"Longest_edge": fit_longest_edge[i]}
 
@@ -230,14 +224,14 @@ class AMR(marking_ele):
         for marked_lst in hanging_edges[:, 1::]:
             marked_edge = tuple(marked_lst)
             reversed_edge = tuple(sorted(marked_edge, reverse=True))
-            if marked_edge in ele_dict:
-                ele_dict[marked_edge]["Marked"] = True
-            if reversed_edge in ele_dict:
-                ele_dict[reversed_edge]["Marked"] = True
+            if marked_edge in self.ele_dict:
+                self.ele_dict[marked_edge]["Marked"] = True
+            if reversed_edge in self.ele_dict:
+                self.ele_dict[reversed_edge]["Marked"] = True
 
-        return ele_dict, longest_edge_dict
+        return longest_edge_dict
 
-    def elements_to_refine(self, ele_dict, hanging_edges, longest_edge_dict):
+    def elements_to_refine(self, hanging_edges, longest_edge_dict):
         """
         This is the main function for determining the elements which have to be refined. The algorithm needs the
         marked elements from the class marking_ele and their corresponding edges. These edges are hanging edges, because
@@ -263,8 +257,8 @@ class AMR(marking_ele):
         for edges in hanging_edges[:, 1::]:
             edges = tuple(edges)
             reversed_edge = tuple(reversed(edges))
-            if reversed_edge in ele_dict:
-                ele_dict[reversed_edge]["Marked"] = True
+            if reversed_edge in self.ele_dict:
+                self.ele_dict[reversed_edge]["Marked"] = True
                 longest_edge = tuple(longest_edge_dict[reversed_edge]["Longest_edge"])
                 if np.isin(edges, (3, 86)).all():
                     pass
@@ -277,11 +271,11 @@ class AMR(marking_ele):
                     while True:
                         if np.isin(adjacent_edge, longest_edge).all():
                             break
-                        if not ele_dict[longest_edge]["Marked"]:
-                            ele_dict[longest_edge]["Marked"] = True
+                        if not self.ele_dict[longest_edge]["Marked"]:
+                            self.ele_dict[longest_edge]["Marked"] = True
                             adjacent_edge = tuple(reversed(longest_edge))
-                            if adjacent_edge in ele_dict:
-                                ele_dict[adjacent_edge]["Marked"] = True
+                            if adjacent_edge in self.ele_dict:
+                                self.ele_dict[adjacent_edge]["Marked"] = True
                             if adjacent_edge in longest_edge_dict:
                                 longest_edge = tuple(
                                     longest_edge_dict[adjacent_edge]["Longest_edge"]
@@ -293,7 +287,7 @@ class AMR(marking_ele):
                         else:
                             break
 
-    def count_marked_edges(self, ele_dict):
+    def count_marked_edges(self):
         """
         Counts the marked edges per element and assigns the number to corresponding instance variables
 
@@ -302,7 +296,7 @@ class AMR(marking_ele):
         """
 
         marked_dict = {}
-        for index, val in enumerate(ele_dict.values()):
+        for index, val in enumerate(self.ele_dict.values()):
             ele_number = val["Ele_num"]
             marked = val["Marked"]
             edge = val["Edge"]
@@ -337,7 +331,7 @@ class AMR(marking_ele):
 
         return marked_dict
 
-    def get_marked_neighbor(self, marked_dict, ele_dict):
+    def get_marked_neighbor(self, marked_dict):
         """
         Assign the neighbors of marked elements. Neighboring edges are edges with a reversed edge order. The
         reversed tuple is present in the element dictionary and therefore easy to find.
@@ -357,17 +351,17 @@ class AMR(marking_ele):
                     neighbor.append(tuple(reversed(edge)))
 
                 if count == 1:
-                    if neighbor[0] in ele_dict:
+                    if neighbor[0] in self.ele_dict:
                         self.green_marked_neighbor.append(
-                            ele_dict[neighbor[0]]["Ele_num"]
+                            self.ele_dict[neighbor[0]]["Ele_num"]
                         )
 
                 if count == 2:
-                    if neighbor[0] and neighbor[1] in ele_dict:
+                    if neighbor[0] and neighbor[1] in self.ele_dict:
                         self.blue_marked_neighbor.append(
                             [
-                                ele_dict[neighbor[0]]["Ele_num"],
-                                ele_dict[neighbor[1]]["Ele_num"],
+                                self.ele_dict[neighbor[0]]["Ele_num"],
+                                self.ele_dict[neighbor[1]]["Ele_num"],
                             ]
                         )
         self.blue_marked_neighbor = np.asarray(self.blue_marked_neighbor)
@@ -737,17 +731,17 @@ class AMR(marking_ele):
         @return:
         """
         hanging_edges = self.long_stacked_edges_array(marked_edges)
-        ele_dict, longest_edge_dict = AMR.get_ele_dictionary(
+        longest_edge_dict = self.get_ele_dictionary(
             hanging_edges, all_edges, nodes_where_longest
         )
-        self.elements_to_refine(ele_dict, hanging_edges, longest_edge_dict)
-        marked_dict = self.count_marked_edges(ele_dict)
-        self.get_marked_neighbor(marked_dict, ele_dict)
+        self.elements_to_refine(hanging_edges, longest_edge_dict)
+        marked_dict = self.count_marked_edges()
+        self.get_marked_neighbor(marked_dict)
 
         mid_node_dict = self.get_new_mid_nodes(marked_dict, longest_edge_dict)
         self.assign_mid_nodes(mid_node_dict, marked_dict, longest_edge_dict)
 
-        return ele_dict, marked_dict, longest_edge_dict
+        return marked_dict, longest_edge_dict
 
     def create_all_pattern(self):
         """
