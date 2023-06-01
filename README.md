@@ -10,5 +10,20 @@ The following refinement strategies are used:
 
 ![Alt text](img/ref_strategy.jpg?raw=true "Refinement strategy")
 
-Note that the marking strategy itself is not based on the algorithm that is proposed by Willy Dörfler. At the moment, the marking of an element
-is based on the thickness difference between undeformed and deformed shell element. Additional marking strategies should be used to get a better result.
+**Current status**
+
+The refinement works with an acceptable speed. The blow molding simlulation works with the refined mesh.
+
+![Alt text] (img/refined_bottle_cap.jpg?raw=true "Refined bottle head")
+
+
+
+![Alt text] (img/refined_bottle_body.jpg?raw=true "Refined bottle head")
+
+**To do's**
+
+Find an appropiate way to handle the boundary elements in the clamping area. Sometimes hanging nodes appear
+at the boundary. There are two way's: 
+
+- Avoid these are by defining an "offset" where elements should'nt be marked
+- Include those new hanging edges in the boundary conditions
