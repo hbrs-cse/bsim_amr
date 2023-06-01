@@ -5,11 +5,9 @@ Institut für Elektrotechnik, Maschinenbau und Technikjournalismus
 Masterprojekt 1
 Adaptive Mesh Refinement
 """
-import time
 
 import numpy as np
 from marking_ele import marking_ele
-from bcs_read import bcs_read
 
 
 class AMR(marking_ele):
@@ -195,19 +193,16 @@ class AMR(marking_ele):
         nodes_where_longest = np.asarray(nodes_where_longest)
         return nodes_where_longest
 
-
-    def get_ele_dictionary(self, hanging_edges, all_edges, nodes_where_longest):
+    def get_ele_dictionary(self, hanging_edges, nodes_where_longest):
         """
         Creating a dictionary which stores the element edge end corresponding Element numbers. Set
         marked edges to true, otherwise false. A second dictionary stores the longest edge of each elements edge.
 
         @param hanging_edges:
-        @param all_edges:
         @param nodes_where_longest:
         @return:
         """
 
-        ele_dict = {}
         longest_edge_dict = {}
         ele_num = 0
         fit_longest_edge = np.repeat(nodes_where_longest, 3, axis=0)
@@ -248,7 +243,6 @@ class AMR(marking_ele):
         Option 3 and 5 create new hanging nodes which have to be eliminated before ending the algorithm.
         There are no more refinements if an element is a green marked element.
 
-        @param ele_dict:
         @param hanging_edges:
         @param longest_edge_dict:
         @return:
@@ -260,17 +254,20 @@ class AMR(marking_ele):
             if reversed_edge in self.ele_dict:
                 self.ele_dict[reversed_edge]["Marked"] = True
                 longest_edge = tuple(longest_edge_dict[reversed_edge]["Longest_edge"])
-                if np.isin(edges, (3, 86)).all():
-                    pass
-                if np.isin(longest_edge, (3, 86)).all():
-                    pass
-                if np.isin(longest_edge, (3, 86)).all():
-                    pass
                 adjacent_edge = edges
                 if longest_edge:
                     while True:
                         if np.isin(adjacent_edge, longest_edge).all():
                             break
+
+                        if longest_edge in self.ele_dict:
+                            pass
+                        else:
+                            raise KeyError(
+                                "Hanging nodes {} at the boundary the clamping area. Please choose other threshold for "
+                                "the refinement.".format(longest_edge)
+                            )
+
                         if not self.ele_dict[longest_edge]["Marked"]:
                             self.ele_dict[longest_edge]["Marked"] = True
                             adjacent_edge = tuple(reversed(longest_edge))
@@ -280,10 +277,6 @@ class AMR(marking_ele):
                                 longest_edge = tuple(
                                     longest_edge_dict[adjacent_edge]["Longest_edge"]
                                 )
-                                if np.isin(longest_edge, (3, 86)).all():
-                                    pass
-                                if np.isin(longest_edge, (3, 86)).all():
-                                    pass
                         else:
                             break
 
@@ -291,7 +284,6 @@ class AMR(marking_ele):
         """
         Counts the marked edges per element and assigns the number to corresponding instance variables
 
-        @param ele_dict:
         @return: marked_dict
         """
 
@@ -337,7 +329,6 @@ class AMR(marking_ele):
         reversed tuple is present in the element dictionary and therefore easy to find.
 
         @param marked_dict:
-        @param ele_dict:
         @return:
         """
 
@@ -720,20 +711,17 @@ class AMR(marking_ele):
 
         return nodes_where_longest, all_edges, marked_edges
 
-    def find_elements_to_refine(self, marked_edges, all_edges, nodes_where_longest):
+    def find_elements_to_refine(self, marked_edges, nodes_where_longest):
         """
         Main function for the RGB-refinement and to determine the new mid nodes of
         red and blue elements.
 
         @param marked_edges:
-        @param all_edges:
         @param nodes_where_longest:
         @return:
         """
         hanging_edges = self.long_stacked_edges_array(marked_edges)
-        longest_edge_dict = self.get_ele_dictionary(
-            hanging_edges, all_edges, nodes_where_longest
-        )
+        longest_edge_dict = self.get_ele_dictionary(hanging_edges, nodes_where_longest)
         self.elements_to_refine(hanging_edges, longest_edge_dict)
         marked_dict = self.count_marked_edges()
         self.get_marked_neighbor(marked_dict)
@@ -772,6 +760,6 @@ class AMR(marking_ele):
 
         self.run_marking()
         nodes_where_longest, all_edges, marked_edges = self.get_longest_edge()
-        self.find_elements_to_refine(marked_edges, all_edges, nodes_where_longest)
+        self.find_elements_to_refine(marked_edges, nodes_where_longest)
         self.print_information()
         self.create_all_pattern()

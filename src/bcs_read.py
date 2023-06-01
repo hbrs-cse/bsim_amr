@@ -56,9 +56,9 @@ class bcs_read(BSimAmr):
 
         if list_bcs_undeformed:
             pass
-            #print("\nFile '{}' will be read...".format(self.path_undef))
+            print("\nFile '{}' will be read...".format(self.path_undef))
         else:
-            raise ValueError("No .bcs-files found")
+            raise FileNotFoundError("No .bcs-files found")
 
     def get_path_deformed(self):
         """
@@ -82,7 +82,7 @@ class bcs_read(BSimAmr):
             pass
             print("\nFile '{}' will be read...\n".format(self.path_def))
         else:
-            raise ValueError("No .bcs-files found")
+            raise FileNotFoundError("No .bcs-files found")
 
     def read_ele(self):
         """

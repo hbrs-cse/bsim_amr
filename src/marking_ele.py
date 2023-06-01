@@ -10,7 +10,6 @@ from bcs_read import bcs_read
 import numpy as np
 
 
-
 class marking_ele(bcs_read):
     """
     Class for marking of elements
@@ -45,8 +44,6 @@ class marking_ele(bcs_read):
         """
         arg_list = np.where((thickness_diff > self.thickness) & (thickness_diff < 80))
         arg_list = [lst for lst in arg_list[0] if lst > 600]
-        # ele_list = [arg_list.tolist()]
-        # for sublist in ele_list:
         for val in arg_list:
             self.ele_list.append(val)
             self.marked_ele.append(val)
@@ -77,6 +74,12 @@ class marking_ele(bcs_read):
         return edges
 
     def stacked_edges_array(self, ele):
+        """
+        Stack the edges array.
+
+        @param ele:
+        @return:
+        """
         index = np.repeat(ele, 3)
         all_edges = self.get_nodes_array(ele)
         all_edges = marking_ele.edges(all_edges)
@@ -91,6 +94,11 @@ class marking_ele(bcs_read):
         return edges
 
     def get_back_edges(self):
+        """
+        Calls the below functions.
+
+        @return:
+        """
         all_ele = np.arange(0, len(self.ele_undeformed))
         all_edges = self.stacked_edges_array(all_ele)
 
@@ -101,9 +109,7 @@ class marking_ele(bcs_read):
         Creating a dictionary which stores the element edge end corresponding Element numbers. Set
         marked edges to true, otherwise false. A second dictionary stores the longest edge of each elements edge.
 
-        @param hanging_edges:
         @param all_edges:
-        @param nodes_where_longest:
         @return:
         """
 
@@ -138,29 +144,34 @@ class marking_ele(bcs_read):
             direction_vector_container = [np.array([]), np.array([])]
 
             direction_vector_container[0] = np.subtract(
-
                 mesh_coor[edge[1]], mesh_coor[edge[0]]
-                )
+            )
 
             direction_vector_container[1] = np.subtract(
                 mesh_coor[edge[0]], mesh_coor[edge[2]]
-                )
+            )
 
-            normal_vector = np.cross(direction_vector_container[0],
-                                     direction_vector_container[1]
-                                     )
+            normal_vector = np.cross(
+                direction_vector_container[0], direction_vector_container[1]
+            )
 
             vector_length = np.linalg.norm(normal_vector)
 
             if ele_num not in normal_vec_dict:
-                normal_vec_dict[ele_num] = {"Normal_vector": normal_vector,
-                                            "Vector_length": vector_length
-                                            }
+                normal_vec_dict[ele_num] = {
+                    "Normal_vector": normal_vector,
+                    "Vector_length": vector_length,
+                }
 
         return normal_vec_dict
 
     def calc_angular_deviation(self, normal_vec_dict):
+        """
+        Calculate the angular deviation between the neighboring elements normal vectors.
 
+        @param normal_vec_dict:
+        @return:
+        """
         for key, val in self.ele_dict.items():
             edge = val["Edge"]
             neighbor_ele = tuple(reversed(edge))
@@ -169,23 +180,38 @@ class marking_ele(bcs_read):
                 ele_num_neighbor = self.ele_dict[neighbor_ele]["Ele_num"]
                 normal_vec = normal_vec_dict[ele_num]["Normal_vector"]
                 vector_length = normal_vec_dict[ele_num]["Vector_length"]
+
                 if ele_num in normal_vec_dict:
-                    neighbor_normal_vec = normal_vec_dict[ele_num_neighbor]["Normal_vector"]
-                    neighbor_vector_length = normal_vec_dict[ele_num_neighbor]["Vector_length"]
-                    dot_product = np.dot(normal_vec, neighbor_normal_vec)
-                    if not dot_product > 0:
+                    neighbor_normal_vec = normal_vec_dict[ele_num_neighbor][
+                        "Normal_vector"
+                    ]
+                    neighbor_vector_length = normal_vec_dict[ele_num_neighbor][
+                        "Vector_length"
+                    ]
+                    scalar_prod = np.dot(normal_vec, neighbor_normal_vec)
+                    vector_length = np.multiply(vector_length, neighbor_vector_length)
+
+                    if not scalar_prod > 0:
                         neighbor_normal_vec = np.multiply(neighbor_normal_vec, -1)
-                        dot_product = np.dot(normal_vec, neighbor_normal_vec)
-                    angular_deviation = np.degrees(np.arccos(
-                        np.divide(
-                            dot_product,
-                            np.multiply(vector_length, neighbor_vector_length)
+                        scalar_prod = np.dot(normal_vec, neighbor_normal_vec)
+
+                    cosinus_of_angle = np.divide(scalar_prod, vector_length).round(decimals=3)
+
+                    angular_deviation = np.degrees(
+                        np.arccos(
+                            cosinus_of_angle
                         )
                     )
-                    )
 
-                    if angular_deviation > 15 and ele_num not in self.marked_ele and ele_num > 600 and ele_num <2000:
+                    if (
+                        angular_deviation > 15
+                        and ele_num not in self.marked_ele
+                        and ele_num_neighbor not in self.marked_ele
+                        and ele_num > 600
+                        and ele_num_neighbor > 600
+                    ):
                         self.marked_ele.append(ele_num)
+                        self.marked_ele.append(ele_num_neighbor)
 
     def run_marking(self):
         """
@@ -193,8 +219,8 @@ class marking_ele(bcs_read):
 
         """
         self.get_ele()
-        #thickness_diff = self.thickness_diff_calc()
-        #self.thickness_diff(thickness_diff)
+        thickness_diff = self.thickness_diff_calc()
+        self.thickness_diff(thickness_diff)
         edges = self.get_back_edges()
         self.ele_dictionary(edges)
         normal_vector_dict = self.calc_normal_vector()

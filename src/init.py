@@ -5,9 +5,9 @@ import io
 import pstats
 import subprocess
 
-path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/*"
+path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
 out_path = (
-    r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/out"
+    r"D:\OneDrive - Hochschule Bonn-Rhein-Sieg\Master\MP1\Project\out\Vierkant\out"
 )
 thickness = 50
 
@@ -24,7 +24,9 @@ def get_pstats():
     s = io.StringIO()
     ps = pstats.Stats(pr, stream=s).sort_stats("cumtime")
     ps.print_stats()
-    ps.dump_stats("C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/output.pstats")
+    ps.dump_stats(
+        "C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/output.pstats"
+    )
 
     with open(
         "C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/perf_output.txt",
@@ -32,7 +34,8 @@ def get_pstats():
     ) as f:
         f.write(s.getvalue())
 
+
 if __name__ == "__main__":
     write_bcs = write_file(path, out_path, thickness)
     write_bcs.run_main()
-    #get_pstats()
+    # get_pstats()

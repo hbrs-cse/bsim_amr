@@ -84,7 +84,7 @@ class write_file(AMR):
             "200.0  Char. dist\n",
             "-111 1 1 1 1 1 1 END OF COORS\n",
             "-111 1 1 1 1 1 1 END OF BCs\n",
-            self.plane_coordinates
+            self.plane_coordinates,
         ]
         with open(os.path.join(self.out_path, self.file_name), "w") as bcs_amf:
             bcs_amf.write(filtering[0])
@@ -127,7 +127,7 @@ class write_file(AMR):
                     )
             bcs_amf.write(filtering[5])
 
-            #if self.plane_coordinates:
+            # if self.plane_coordinates:
             #    bcs_amf.write(filtering[6])
 
     def check_success(self):
@@ -147,7 +147,7 @@ class write_file(AMR):
         """
 
         self.run_amr()
-        #print("Writing new .bcs-file...")
+        # print("Writing new .bcs-file...")
         self.manipulate_ele()
         self.append_mesh()
         self.write_bcs()
