@@ -120,7 +120,6 @@ class marking_ele(bcs_read):
 
             if element_val not in ele_dict:
                 self.ele_dict[element_val] = {
-                    "Edge": element_val,
                     "Ele_num": ele_num,
                     "Marked": False,
                 }
@@ -172,8 +171,7 @@ class marking_ele(bcs_read):
         @param normal_vec_dict:
         @return:
         """
-        for key, val in self.ele_dict.items():
-            edge = val["Edge"]
+        for edge, val in self.ele_dict.items():
             neighbor_ele = tuple(reversed(edge))
             ele_num = val["Ele_num"]
             if neighbor_ele in self.ele_dict:
@@ -210,6 +208,7 @@ class marking_ele(bcs_read):
                         and ele_num > 600
                         and ele_num_neighbor > 600
                     ):
+                        pass
                         self.marked_ele.append(ele_num)
                         self.marked_ele.append(ele_num_neighbor)
 
@@ -219,8 +218,8 @@ class marking_ele(bcs_read):
 
         """
         self.get_ele()
-        thickness_diff = self.thickness_diff_calc()
-        self.thickness_diff(thickness_diff)
+        #thickness_diff = self.thickness_diff_calc()
+        #self.thickness_diff(thickness_diff)
         edges = self.get_back_edges()
         self.ele_dictionary(edges)
         normal_vector_dict = self.calc_normal_vector()

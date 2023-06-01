@@ -5,9 +5,11 @@ Institut für Elektrotechnik, Maschinenbau und Technikjournalismus
 Masterprojekt 1
 Adaptive Mesh Refinement
 """
+import time
 
 import numpy as np
 from marking_ele import marking_ele
+import time
 
 
 class AMR(marking_ele):
@@ -207,9 +209,7 @@ class AMR(marking_ele):
         ele_num = 0
         fit_longest_edge = np.repeat(nodes_where_longest, 3, axis=0)
 
-        for i, (_, edge) in enumerate(self.ele_dict.items()):
-            element_val = edge["Edge"]
-
+        for i, (element_val, edge) in enumerate(self.ele_dict.items()):
             if element_val not in longest_edge_dict:
                 longest_edge_dict[element_val] = {"Longest_edge": fit_longest_edge[i]}
 
@@ -247,6 +247,7 @@ class AMR(marking_ele):
         @param longest_edge_dict:
         @return:
         """
+
 
         for edges in hanging_edges[:, 1::]:
             edges = tuple(edges)
@@ -288,10 +289,9 @@ class AMR(marking_ele):
         """
 
         marked_dict = {}
-        for index, val in enumerate(self.ele_dict.values()):
+        for index, (edge, val) in enumerate(self.ele_dict.items()):
             ele_number = val["Ele_num"]
             marked = val["Marked"]
-            edge = val["Edge"]
             if ele_number not in marked_dict:
                 marked_dict[ele_number] = {
                     "Ele_num": ele_number,
@@ -332,10 +332,9 @@ class AMR(marking_ele):
         @return:
         """
 
-        for key, val in marked_dict.items():
+        for _, val in marked_dict.items():
             count = val["Count"]
             edges = val["Edge"]
-
             if count and count < 3:
                 neighbor = []
                 for edge in edges:
@@ -368,10 +367,10 @@ class AMR(marking_ele):
 
         node_num = len(self.mesh_undeformed)
         mid_node_dict = {}
-        for key, val in marked_dict.items():
-            edges = val["Edge"]
+        for _, val in marked_dict.items():
             count = val["Count"]
             ele_num = val["Ele_num"]
+            edges = val["Edge"]
 
             if edges:
                 longest_edge = longest_edge_dict[edges[0]]["Longest_edge"]
@@ -456,7 +455,7 @@ class AMR(marking_ele):
                 }
 
         for _, row in red_dict.items():
-            red_edges = row["Edge"]
+            red_edges = tuple(row["Edge"])
             ele_num = row["Ele_num"]
 
             red_edges = [tuple(sorted(edge)) for edge in red_edges]
@@ -472,8 +471,8 @@ class AMR(marking_ele):
                     "Edges": red_edges,
                 }
 
-        for index, (_, row) in enumerate(blue_dict.items()):
-            blue_edges = row["Edge"]
+        for _, row in blue_dict.items():
+            blue_edges = tuple(row["Edge"])
             ele_num = row["Ele_num"]
             blue_edges = [tuple(edge) for edge in blue_edges]
 
@@ -722,8 +721,10 @@ class AMR(marking_ele):
         """
         hanging_edges = self.long_stacked_edges_array(marked_edges)
         longest_edge_dict = self.get_ele_dictionary(hanging_edges, nodes_where_longest)
+        tic = time.perf_counter()
         self.elements_to_refine(hanging_edges, longest_edge_dict)
         marked_dict = self.count_marked_edges()
+        toc = print("Elapsed time", str(time.perf_counter()-tic))
         self.get_marked_neighbor(marked_dict)
 
         mid_node_dict = self.get_new_mid_nodes(marked_dict, longest_edge_dict)
