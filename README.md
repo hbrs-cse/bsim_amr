@@ -14,11 +14,11 @@ The following refinement strategies are used:
 
 The refinement works with an acceptable speed. The blow molding simlulation works with the refined mesh.
 
-![Alt text](img/refined_bottle_cap.jpg?raw=true "Refined bottle head")
+![Alt text](img/refined_bottle_cap.jpg?raw=true =250x250 "Refined bottle head")
 
 
 
-![Alt text](img/refined_bottle_body.jpg?raw=true "Refined bottle head")
+![Alt text](img/refined_bottle_body.jpg?raw=true =250x250 "Refined bottle head")
 
 **To do's**
 
