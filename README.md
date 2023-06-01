@@ -14,11 +14,11 @@ The following refinement strategies are used:
 
 The refinement works with an acceptable speed. The blow molding simlulation works with the refined mesh.
 
-![Alt text] (img/refined_bottle_cap.jpg?raw=true "Refined bottle head")
+![Alt text](img/refined_bottle_cap.jpg?raw=true "Refined bottle head")
 
 
 
-![Alt text] (img/refined_bottle_body.jpg?raw=true "Refined bottle head")
+![Alt text](img/refined_bottle_body.jpg?raw=true "Refined bottle head")
 
 **To do's**
 
@@ -26,4 +26,4 @@ Find an appropiate way to handle the boundary elements in the clamping area. Som
 at the boundary. There are two way's: 
 
 - Avoid these are by defining an "offset" where elements should'nt be marked
-- Include those new hanging edges in the boundary conditions
+- Include those new hanging edges in 
