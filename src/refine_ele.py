@@ -719,7 +719,7 @@ class AMR(marking_ele):
         @param nodes_where_longest:
         @return:
         """
-        hanging_edges = self.long_stacked_edges_array(marked_edges)
+        hanging_edges = self.long_stacked_edges_array(self.marked_ele)
         longest_edge_dict = self.get_ele_dictionary(hanging_edges, nodes_where_longest)
         tic = time.perf_counter()
         self.elements_to_refine(hanging_edges, longest_edge_dict)
