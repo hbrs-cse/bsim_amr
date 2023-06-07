@@ -73,7 +73,7 @@ class write_file(AMR):
         Write the new file.
         @return:
         """
-        self.file_name = "test_mesh_full_dict.bcs"
+        self.file_name = "Test_mesh.bcs"
         file_length_ele = len(self.ele_undeformed)
         file_length_mesh = len(self.mesh_undeformed)
         file_length_bc = len(self.bc)

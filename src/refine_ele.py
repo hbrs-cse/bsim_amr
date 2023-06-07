@@ -261,11 +261,9 @@ class AMR(marking_ele):
                         if np.isin(adjacent_edge, longest_edge).all():
                             break
 
-                        if longest_edge in self.ele_dict:
-                            pass
-                        else:
+                        if longest_edge not in self.ele_dict:
                             raise KeyError(
-                                "Hanging nodes {} at the boundary the clamping area. Please choose other threshold for "
+                                "Hanging nodes {} at the boundary the clamping area. Please choose another threshold for "
                                 "the refinement.".format(longest_edge)
                             )
 
@@ -347,7 +345,13 @@ class AMR(marking_ele):
                         )
 
                 if count == 2:
-                    if neighbor[0] and neighbor[1] in self.ele_dict:
+                    for ne in neighbor:
+                        if ne not in self.ele_dict:
+                            raise KeyError(
+                                "Hanging nodes at the boundary the clamping area. Please choose another threshold for "
+                                "the refinement."
+                            )
+                    else:
                         self.blue_marked_neighbor.append(
                             [
                                 self.ele_dict[neighbor[0]]["Ele_num"],
@@ -710,7 +714,7 @@ class AMR(marking_ele):
 
         return nodes_where_longest, all_edges, marked_edges
 
-    def find_elements_to_refine(self, marked_edges, nodes_where_longest):
+    def find_elements_to_refine(self, nodes_where_longest):
         """
         Main function for the RGB-refinement and to determine the new mid nodes of
         red and blue elements.
@@ -721,10 +725,8 @@ class AMR(marking_ele):
         """
         hanging_edges = self.long_stacked_edges_array(self.marked_ele)
         longest_edge_dict = self.get_ele_dictionary(hanging_edges, nodes_where_longest)
-        tic = time.perf_counter()
         self.elements_to_refine(hanging_edges, longest_edge_dict)
         marked_dict = self.count_marked_edges()
-        toc = print("Elapsed time", str(time.perf_counter()-tic))
         self.get_marked_neighbor(marked_dict)
 
         mid_node_dict = self.get_new_mid_nodes(marked_dict, longest_edge_dict)
@@ -761,6 +763,6 @@ class AMR(marking_ele):
 
         self.run_marking()
         nodes_where_longest, all_edges, marked_edges = self.get_longest_edge()
-        self.find_elements_to_refine(marked_edges, nodes_where_longest)
+        self.find_elements_to_refine(nodes_where_longest)
         self.print_information()
         self.create_all_pattern()

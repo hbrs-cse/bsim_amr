@@ -7,7 +7,7 @@ import subprocess
 
 path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
 out_path = (
-    r"D:\OneDrive - Hochschule Bonn-Rhein-Sieg\Master\MP1\Project\out\Vierkant\out"
+    r"D:\OneDrive - Hochschule Bonn-Rhein-Sieg\Master\MP1\Project\out\Vierkant"
 )
 thickness = 50
 
@@ -23,7 +23,7 @@ def get_pstats():
     pr.disable()
     s = io.StringIO()
     ps = pstats.Stats(pr, stream=s).sort_stats("cumtime")
-    ps.print_stats()
+    ps.strip_dirs().print_stats()
     ps.dump_stats(
         "C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/output.pstats"
     )

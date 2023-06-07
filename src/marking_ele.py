@@ -202,11 +202,11 @@ class marking_ele(bcs_read):
                     )
 
                     if (
-                        angular_deviation > 15
-                        and ele_num not in self.marked_ele
-                        and ele_num_neighbor not in self.marked_ele
-                        and ele_num > 600
-                        and ele_num_neighbor > 600
+                            angular_deviation > 20
+                            and ele_num not in self.marked_ele
+                            and ele_num_neighbor not in self.marked_ele
+                            and ele_num > 800
+                            and ele_num_neighbor > 800
                     ):
                         pass
                         self.marked_ele.append(ele_num)
@@ -218,8 +218,8 @@ class marking_ele(bcs_read):
 
         """
         self.get_ele()
-        #thickness_diff = self.thickness_diff_calc()
-        #self.thickness_diff(thickness_diff)
+        thickness_diff = self.thickness_diff_calc()
+        self.thickness_diff(thickness_diff)
         edges = self.get_back_edges()
         self.ele_dictionary(edges)
         normal_vector_dict = self.calc_normal_vector()

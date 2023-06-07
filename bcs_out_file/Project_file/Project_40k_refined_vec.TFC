@@ -1,0 +1,88 @@
+B-SIM Solved Project
+C:\Users\f.kind\OneDrive - Hochschule Bonn-Rhein-Sieg\Master\MP1\Project\out\Vierkant\out\out\Vierkantflasche_refined_vec.bcs
+D:\FuE\F.Kind\Vierkantflasche1mm\Tool 1.tol
+D:\FuE\F.Kind\Vierkantflasche1mm\Tool 2.tol
+None
+None
+None
+None
+None
+None
+None
+None
+D:\FuE\F.Kind\Vierkantflasche1mm\pct_1.pct
+D:\FuE\F.Kind\Vierkantflasche1mm\HDPE_210_vertraulich.vie
+Unused
+Unused
+Unused
+Unused
+D:\FuE\F.Kind\Vierkantflasche1mm\Heat Friction.hfr
+C:\Users\f.kind\OneDrive - Hochschule Bonn-Rhein-Sieg\Master\bsim_amr\bcs_out_file\Project_file\Project_40k_refined_vec.TFF
+    0  -----------------------
+              0 Pressure
+              0 Time
+   1.20311e-007 Volume
+    1  -----------------------
+          166.9 Pressure
+      0.0041725 Time
+   3.34054e-008 Volume
+    2  -----------------------
+        265.315 Pressure
+     0.00663287 Time
+     6.583e-007 Volume
+    3  -----------------------
+        398.175 Pressure
+     0.00995438 Time
+   1.72386e-006 Volume
+    4  -----------------------
+        577.537 Pressure
+      0.0144384 Time
+   3.84397e-006 Volume
+    5  -----------------------
+        819.674 Pressure
+      0.0204919 Time
+   7.19679e-006 Volume
+    6  -----------------------
+           1000 Pressure
+       0.028664 Time
+   3.68765e-005 Volume
+    7  -----------------------
+           1000 Pressure
+      0.0368362 Time
+    0.000155611 Volume
+    8  -----------------------
+           1000 Pressure
+      0.0450083 Time
+    0.000297429 Volume
+    9  -----------------------
+        77203.9 Pressure
+      0.0531805 Time
+     0.00135874 Volume
+   10  -----------------------
+         273009 Pressure
+      0.0613526 Time
+     0.00186507 Volume
+   11  -----------------------
+         468813 Pressure
+      0.0695248 Time
+     0.00186559 Volume
+   12  -----------------------
+         610788 Pressure
+      0.0776969 Time
+     0.00186566 Volume
+   13  -----------------------
+         654917 Pressure
+      0.0887293 Time
+     0.00186569 Volume
+   14  -----------------------
+         714492 Pressure
+       0.103623 Time
+     0.00186572 Volume
+   15  -----------------------
+         794918 Pressure
+        0.12373 Time
+     0.00186574 Volume
+   16  -----------------------
+         800000 Pressure
+          0.125 Time
+     0.00186575 Volume
