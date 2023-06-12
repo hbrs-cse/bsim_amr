@@ -11,31 +11,7 @@ out_path = (
 )
 thickness = 50
 
-
-def get_pstats():
-    """
-    Write cProfile file and pstats for performance analysis.
-
-    @return:
-    """
-    pr = cProfile.Profile()
-    pr.enable()
-    pr.disable()
-    s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats("cumtime")
-    ps.strip_dirs().print_stats()
-    ps.dump_stats(
-        "C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/output.pstats"
-    )
-
-    with open(
-        "C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/bsim_amr/cProfile/perf_output.txt",
-        "w+",
-    ) as f:
-        f.write(s.getvalue())
-
-
 if __name__ == "__main__":
     write_bcs = write_file(path, out_path, thickness)
     write_bcs.run_main()
-    # get_pstats()
+
