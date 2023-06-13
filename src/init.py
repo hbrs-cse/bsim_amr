@@ -1,10 +1,5 @@
 from bcs_write import write_file
 
-import cProfile
-import io
-import pstats
-import subprocess
-
 path = r"C:/Users/Fabik/OneDrive - Hochschule Bonn-Rhein-Sieg/Master/MP1/Project/examples/Vierkant/*"
 out_path = (
     r"D:\OneDrive - Hochschule Bonn-Rhein-Sieg\Master\MP1\Project\out\Vierkant"

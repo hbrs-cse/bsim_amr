@@ -248,7 +248,6 @@ class AMR(marking_ele):
         @return:
         """
 
-
         for edges in hanging_edges[:, 1::]:
             edges = tuple(edges)
             reversed_edge = tuple(reversed(edges))
@@ -263,8 +262,8 @@ class AMR(marking_ele):
 
                         if longest_edge not in self.ele_dict:
                             raise KeyError(
-                                "Hanging nodes {} at the boundary the clamping area. Please choose another threshold for "
-                                "the refinement.".format(longest_edge)
+                                "Hanging nodes {} at the boundary the clamping area. Please choose another threshold "
+                                "for the refinement.".format(longest_edge)
                             )
 
                         if not self.ele_dict[longest_edge]["Marked"]:
