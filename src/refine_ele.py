@@ -45,7 +45,7 @@ class AMR(marking_ele):
         self.blue_mid_nodes = {}
         self.green_mid_nodes = {}
 
-        self.bcs_mesh = None
+        self.bcs_mesh = []
 
     def run_marking(self):
         """
@@ -390,6 +390,7 @@ class AMR(marking_ele):
                                     "Coordinates": tuple(mid_node_coor),
                                     "Ele_num": ele_num,
                                 }
+                            self.bcs_mesh.append(tuple(mid_node_coor))
 
                         if count == 2:
                             if np.isin(longest_edge, edge).all():
@@ -402,8 +403,7 @@ class AMR(marking_ele):
                                         "Coordinates": tuple(mid_node_coor),
                                         "Ele_num": ele_num,
                                     }
-
-            self.bcs_mesh = [entry["Coordinates"] for entry in mid_node_dict.values()]
+                                    self.bcs_mesh.append(tuple(mid_node_coor))
 
         return mid_node_dict
 
