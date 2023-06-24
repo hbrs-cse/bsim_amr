@@ -19,6 +19,7 @@ elements. Sometimes elements in the clamping area do have high distortions but t
 adaptive mesh refinement.
 - **angular_deviation_threshold**: Defines the threshold for the angular deviation between neighboring elements. If
 the value exceeds the threshold, both elements are marked.
+
 -**file_name**: The filename of the output file. Make sure it's a string and it ends with the file extension ".bcs".
 
 ---
