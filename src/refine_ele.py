@@ -17,11 +17,15 @@ class AMR(marking_ele):
     This is the main class for executing the adaptive mesh refinement based on the RGB refinement strategy
     """
 
-    def __init__(self, path, out_path, thickness):
+    def __init__(self, path, out_path, thickness_lower_threshold, thickness_upper_threshold,
+                 angular_deviation_threshold, filename_out
+                 ):
         self.ele_list = []
         self.marked_ele = []
 
-        super().__init__(path, out_path, thickness)
+        super().__init__(path, out_path, thickness_lower_threshold, thickness_upper_threshold,
+                         angular_deviation_threshold, filename_out
+                         )
 
         self.all_edges = None
         self.green_neighbor = []
@@ -157,8 +161,8 @@ class AMR(marking_ele):
         euc_dist = [np.array([]), np.array([]), np.array([])]
 
         euc_dist[0] = np.linalg.norm((nodes_mesh[0] - nodes_mesh[1]), axis=1)
-        euc_dist[1] = np.linalg.norm((nodes_mesh[0] - nodes_mesh[2]), axis=1)
-        euc_dist[2] = np.linalg.norm((nodes_mesh[1] - nodes_mesh[2]), axis=1)
+        euc_dist[1] = np.linalg.norm((nodes_mesh[2] - nodes_mesh[1]), axis=1)
+        euc_dist[2] = np.linalg.norm((nodes_mesh[0] - nodes_mesh[2]), axis=1)
 
         euc_dist = np.c_[euc_dist[0], euc_dist[1], euc_dist[2]]
 
@@ -390,7 +394,7 @@ class AMR(marking_ele):
                                     "Coordinates": tuple(mid_node_coor),
                                     "Ele_num": ele_num,
                                 }
-                            self.bcs_mesh.append(tuple(mid_node_coor))
+                                self.bcs_mesh.append(tuple(mid_node_coor))
 
                         if count == 2:
                             if np.isin(longest_edge, edge).all():
@@ -404,6 +408,7 @@ class AMR(marking_ele):
                                         "Ele_num": ele_num,
                                     }
                                     self.bcs_mesh.append(tuple(mid_node_coor))
+
 
         return mid_node_dict
 

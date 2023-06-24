@@ -14,8 +14,12 @@ from bsim_amr import BSimAmr
 
 
 class bcs_read(BSimAmr):
-    def __init__(self, path, out_path, thickness):
-        super().__init__(path, out_path, thickness)
+    def __init__(self, path, out_path, thickness_lower_threshold, thickness_upper_threshold,
+                 angular_deviation_threshold, filename_out
+                 ):
+        super().__init__(path, out_path, thickness_lower_threshold, thickness_upper_threshold,
+                         angular_deviation_threshold, filename_out
+                         )
 
         self.line = None
         self.path_lib = None

@@ -8,8 +8,12 @@ class write_file(AMR):
     Class for writing .bcs-files
     """
 
-    def __init__(self, path, out_path, thickness):
-        super().__init__(path, out_path, thickness)
+    def __init__(self, path, out_path, thickness_lower_threshold, thickness_upper_threshold,
+                 angular_deviation_threshold, filename_out
+                 ):
+        super().__init__(path, out_path, thickness_lower_threshold, thickness_upper_threshold,
+                         angular_deviation_threshold, filename_out
+                         )
         self.file_name = None
 
     def run_amr(self):
@@ -73,7 +77,7 @@ class write_file(AMR):
         Write the new file.
         @return:
         """
-        self.file_name = "Test_mesh.bcs"
+
         file_length_ele = len(self.ele_undeformed)
         file_length_mesh = len(self.mesh_undeformed)
         file_length_bc = len(self.bc)
@@ -86,7 +90,7 @@ class write_file(AMR):
             "-111 1 1 1 1 1 1 END OF BCs\n",
             self.plane_coordinates,
         ]
-        with open(os.path.join(self.out_path, self.file_name), "w") as bcs_amf:
+        with open(os.path.join(self.out_path, self.filename_out), "w") as bcs_amf:
             bcs_amf.write(filtering[0])
             bcs_amf.write(filtering[1])
 
@@ -127,15 +131,15 @@ class write_file(AMR):
                     )
             bcs_amf.write(filtering[5])
 
-            # if self.plane_coordinates:
-            #    bcs_amf.write(filtering[6])
+            if self.plane_coordinates:
+               bcs_amf.write(filtering[6])
 
     def check_success(self):
         """
         Checks if the file exisits.
         @return:
         """
-        if os.path.exists(os.path.join(self.out_path, self.file_name)):
+        if os.path.exists(os.path.join(self.out_path, self.filename_out)):
             print("Success!")
         else:
             raise RuntimeError("Did not complete")
@@ -147,7 +151,7 @@ class write_file(AMR):
         """
 
         self.run_amr()
-        # print("Writing new .bcs-file...")
+        print("Writing new .bcs-file...")
         self.manipulate_ele()
         self.append_mesh()
         self.write_bcs()
