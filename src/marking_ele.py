@@ -47,9 +47,8 @@ class marking_ele(bcs_read):
         Marks all elements whose thickness difference is in a sepcific range.
         """
         arg_list = np.where(
-            (thickness_diff > self.thickness_upper_threshold) & (thickness_diff < self.thickness_lower_threshold)
-            )
-        arg_list = [lst for lst in arg_list[0] if lst > 600]
+            (thickness_diff > self.thickness_lower_threshold) & (thickness_diff < self.thickness_upper_threshold)
+            )[0]
         for val in arg_list:
             self.ele_list.append(val)
             self.marked_ele.append(val)
@@ -211,8 +210,6 @@ class marking_ele(bcs_read):
                             angular_deviation > self.angular_deviation_threshold
                             and ele_num not in self.marked_ele
                             and ele_num_neighbor not in self.marked_ele
-                            and ele_num > 800
-                            and ele_num_neighbor > 800
                     ):
                         pass
                         self.marked_ele.append(ele_num)

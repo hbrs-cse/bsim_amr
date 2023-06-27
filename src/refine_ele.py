@@ -5,11 +5,10 @@ Institut für Elektrotechnik, Maschinenbau und Technikjournalismus
 Masterprojekt 1
 Adaptive Mesh Refinement
 """
-import time
 
 import numpy as np
 from marking_ele import marking_ele
-import time
+import warnings
 
 
 class AMR(marking_ele):
@@ -160,7 +159,7 @@ class AMR(marking_ele):
 
         euc_dist = [np.array([]), np.array([]), np.array([])]
 
-        euc_dist[0] = np.linalg.norm((nodes_mesh[0] - nodes_mesh[1]), axis=1)
+        euc_dist[0] = np.linalg.norm((nodes_mesh[1] - nodes_mesh[0]), axis=1)
         euc_dist[1] = np.linalg.norm((nodes_mesh[2] - nodes_mesh[1]), axis=1)
         euc_dist[2] = np.linalg.norm((nodes_mesh[0] - nodes_mesh[2]), axis=1)
 
@@ -188,9 +187,9 @@ class AMR(marking_ele):
                 if le == 0:
                     nodes_where_longest.append(n[[0, 1]])
                 if le == 1:
-                    nodes_where_longest.append(n[[0, 2]])
-                if le == 2:
                     nodes_where_longest.append(n[[1, 2]])
+                if le == 2:
+                    nodes_where_longest.append(n[[2, 0]])
 
             except ValueError:
                 print("Something went wrong while checking for the longest edge...")
@@ -333,7 +332,7 @@ class AMR(marking_ele):
         @return:
         """
 
-        for _, val in marked_dict.items():
+        for x, (_, val) in enumerate(marked_dict.items()):
             count = val["Count"]
             edges = val["Edge"]
             if count and count < 3:
@@ -348,12 +347,14 @@ class AMR(marking_ele):
                         )
 
                 if count == 2:
-                    for ne in neighbor:
-                        if ne not in self.ele_dict:
-                            raise KeyError(
-                                "Hanging nodes at the boundary the clamping area. Please choose another threshold for "
-                                "the refinement."
-                            )
+
+                    if neighbor[0] or neighbor[1] not in self.ele_dict:
+                        warnings.warn(
+                            "Hanging nodes at the boundary the clamping area. Please choose another threshold for "
+                            "the refinement."
+                        )
+                        pass
+
                     else:
                         self.blue_marked_neighbor.append(
                             [
@@ -408,8 +409,6 @@ class AMR(marking_ele):
                                         "Ele_num": ele_num,
                                     }
                                     self.bcs_mesh.append(tuple(mid_node_coor))
-
-
         return mid_node_dict
 
     def calculate_mid_nodes(self, edge, node_num):
@@ -542,8 +541,6 @@ class AMR(marking_ele):
         @return: keep_node, index, keep_node_index, node_to_close_element, node_rotation
         """
 
-        idx1 = []
-        idx2 = []
         keep_node = []
         keep_node_index = []
         nodes = np.asarray(nodes)
@@ -551,16 +548,11 @@ class AMR(marking_ele):
             intersection, _, indices = np.intersect1d(
                 row[0], row[1], return_indices=True
             )
-            idx1.append(np.where(row[0] == intersection[0]))
-            idx2.append(np.where(row[0] == intersection[1]))
-
             keep_node.append(np.setxor1d(intersection, row[1])[0])
 
             keep_node_index.append(
                 np.where(keep_node[index] == row[1])[0][0].astype(np.int)
             )
-
-        index = np.concatenate(np.c_[idx1, idx2])
 
         # Get the nodes rotation by calling the function nodes_roation
         node_rotation = AMR.nodes_rotation(keep_node_index, nodes)
@@ -569,7 +561,7 @@ class AMR(marking_ele):
         for idx, elements in enumerate(nodes_where_longest):
             vertex_node.append(int(np.setxor1d(elements, nodes[idx])[0]))
 
-        return keep_node, index, keep_node_index, vertex_node, node_rotation
+        return keep_node, keep_node_index, vertex_node, node_rotation
 
     def find_vertex_and_mid_node(self, nodes, neighbor_one, neighbor_two):
         """
@@ -650,7 +642,7 @@ class AMR(marking_ele):
 
         nodes = self.nodes_array(self.for_green_ref)
         nodes_neighbor = self.nodes_array(self.green_marked_neighbor)
-        keep_node, _, _, _, nodes_longest_edge = AMR.keep_rotation_direction(
+        keep_node, _, _, nodes_longest_edge = AMR.keep_rotation_direction(
             nodes_neighbor, nodes, nodes_where_longest
         )
 
