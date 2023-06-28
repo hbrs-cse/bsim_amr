@@ -6,7 +6,6 @@ Masterprojekt 1
 Adaptive Mesh Refinement
 """
 from bcs_read import bcs_read
-
 import numpy as np
 
 

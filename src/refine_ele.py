@@ -264,7 +264,7 @@ class AMR(marking_ele):
                             break
 
                         if longest_edge not in self.ele_dict:
-                            raise KeyError(
+                            warnings.warn(
                                 "Hanging nodes {} at the boundary the clamping area. Please choose another threshold "
                                 "for the refinement.".format(longest_edge)
                             )
@@ -527,12 +527,10 @@ class AMR(marking_ele):
         Neighboring nodes change their order to keep the rotation direction. Therefore it's very important
         to place the nodes at the right position, because they differ depending on the neighbor node position.
 
-        1. Get the index of the intersection between the nodes neighbors (which are the nodes of a marked elements
-           neighbors) and nodes (which are the nodes of the newly marked element f.e. a green element).
-        2. There is always one node in the nodes variable which has no intersection, because there's only an
+        1. There is always one node in the nodes variable which has no intersection, because there's only an
            intersection between an adjacent edge. This node is the "keep node" because it's the vertex node
            opposite of the marked edge.
-        3. Get the correct nodes rotation by calling the function nodes_rotation. Follow the docstrings of
+        2. Get the correct nodes rotation by calling the function nodes_rotation. Follow the docstrings of
            nodes_rotation for more insights.
 
         @param nodes_neighbor:
@@ -545,8 +543,8 @@ class AMR(marking_ele):
         keep_node_index = []
         nodes = np.asarray(nodes)
         for index, row in enumerate(zip(nodes_neighbor, nodes)):
-            intersection, _, indices = np.intersect1d(
-                row[0], row[1], return_indices=True
+            intersection = np.intersect1d(
+                row[0], row[1]
             )
             keep_node.append(np.setxor1d(intersection, row[1])[0])
 
