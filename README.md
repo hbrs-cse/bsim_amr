@@ -28,15 +28,6 @@ The following refinements for shell elements are used:
 
 ![Alt text](img/ref_strategy.jpg?raw=true "Refinement strategy")
 
-**Current status**
-
-The refinement works with an acceptable speed. The blow molding simlulation works with the refined mesh.
-
-![Alt text](img/refined_bottle_cap.jpg?raw=true)
-
-
-
-![Alt text](img/refined_bottle_body.jpg?raw=true)
 
 **To do's**
 
