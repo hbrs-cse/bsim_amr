@@ -220,8 +220,8 @@ class marking_ele(bcs_read):
 
         """
         self.get_ele()
-        #thickness_diff = self.thickness_diff_calc()
-        #self.thickness_diff(thickness_diff)
+        thickness_diff = self.thickness_diff_calc()
+        self.thickness_diff(thickness_diff)
         edges = self.get_back_edges()
         self.ele_dictionary(edges)
         normal_vector_dict = self.calc_normal_vector()

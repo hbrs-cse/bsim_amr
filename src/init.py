@@ -11,7 +11,7 @@ out_path = (
 thickness_lower_threshold = 50
 thickness_upper_threshold = 80
 angular_deviation_threshold = 20
-filename_out = "Test_mesh_20k_Strategie3.bcs"
+filename_out = "Test_mesh_20k.bcs"
 
 if __name__ == "__main__":
     write_bcs = write_file(path, out_path, thickness_lower_threshold, thickness_upper_threshold,
